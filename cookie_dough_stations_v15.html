@@ -138,7 +138,7 @@
   .mode-btn:nth-child(3) { animation-delay: 0.15s; }
   .mode-btn:nth-child(4) { animation-delay: 0.20s; }
   .mode-btn:nth-child(5) { animation-delay: 0.25s; }
-  .mode-btn:nth-child(6) { animation-delay: 0.30s; }
+  .mode-btn:nth-child(6) { animation-delay: 0.30s; grid-column: span 2; }
 
   .mode-btn:active { transform: scale(0.95) translateY(2px); box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
   .mode-btn:hover { border-color: var(--blue); }
@@ -171,7 +171,8 @@
   #station-screen {
     display: none;
     height: 100vh;
-    overflow: hidden;
+    overflow-y: auto;
+    overflow-x: hidden;
     flex-direction: column;
     position: relative;
     z-index: 1;
@@ -544,12 +545,14 @@
       grid-template-columns: 1fr 1fr;
       max-width: 100%;
     }
-    .mode-btn:nth-child(6) { grid-column: span 2; }
+    .mode-btn:nth-child(5) { grid-column: span 1 !important; }
+    .mode-btn:nth-child(6) { grid-column: span 1 !important; }
     .mode-btn { padding: 16px 10px 14px; }
     .mode-icon { font-size: 28px; }
 
     /* Station screen - single column, scrollable */
-    #station-screen { height: auto; min-height: 100vh; overflow: auto; }
+    #station-screen { height: auto; min-height: 100vh; overflow-y: auto; overflow-x: hidden; }
+    #station-screen .station-body { overflow: visible; }
 
     .station-body {
       grid-template-columns: 1fr;
@@ -623,6 +626,36 @@
     .dest-btn .dest-icon { font-size: 16px; }
   }
 
+
+  /* ── REFRESH FLASH ── */
+  @keyframes refreshFlash {
+    0%   { opacity: 1; }
+    30%  { opacity: 0.4; }
+    60%  { opacity: 1; }
+    80%  { opacity: 0.6; }
+    100% { opacity: 1; }
+  }
+  .refresh-flash {
+    animation: refreshFlash 0.6s ease;
+  }
+
+  /* Refresh confirmed toast - sticky at top of station */
+  #refresh-confirm {
+    display: none;
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    background: var(--success);
+    color: white;
+    font-family: 'Nunito', sans-serif;
+    font-size: 13px;
+    font-weight: 800;
+    padding: 8px 16px;
+    text-align: center;
+    letter-spacing: 0.5px;
+  }
+  #refresh-confirm.show { display: block; animation: fadeDown 0.3s ease; }
+
 </style>
 </head>
 <body>
@@ -687,6 +720,7 @@
     <div class="station-icon" id="station-icon"></div>
     <button class="refresh-btn" onclick="fetchStock(currentStation)" title="Refresh stock counts">⟳</button>
   </div>
+  <div id="refresh-confirm">✓ Stock updated</div>
   <div class="station-body" id="station-body"></div>
 </div>
 
@@ -823,9 +857,20 @@ async function fetchStock(mode) {
     });
     if (resp.ok) {
       stockCache = await resp.json();
-      // Always refresh badges using the active station
       const activeMode = currentStation || mode;
       refreshWarnings(activeMode);
+      // Show confirm bar at top of station if we're in a station
+      if (currentStation) {
+        const bar = document.getElementById('refresh-confirm');
+        if (bar) {
+          bar.classList.add('show');
+          // Flash the header too
+          const header = document.querySelector('.station-header');
+          if (header) { header.classList.add('refresh-flash'); setTimeout(() => header.classList.remove('refresh-flash'), 700); }
+          clearTimeout(bar._timer);
+          bar._timer = setTimeout(() => bar.classList.remove('show'), 2500);
+        }
+      }
     }
   } catch (e) {}
 }
