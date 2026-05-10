@@ -138,7 +138,7 @@
   .mode-btn:nth-child(3) { animation-delay: 0.15s; }
   .mode-btn:nth-child(4) { animation-delay: 0.20s; }
   .mode-btn:nth-child(5) { animation-delay: 0.25s; }
-  .mode-btn:nth-child(6) { animation-delay: 0.30s; }
+  .mode-btn:nth-child(6) { animation-delay: 0.30s; grid-column: span 2; }
 
   .mode-btn:active { transform: scale(0.95) translateY(2px); box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
   .mode-btn:hover { border-color: var(--blue); }
@@ -544,7 +544,8 @@
       grid-template-columns: 1fr 1fr;
       max-width: 100%;
     }
-    .mode-btn:nth-child(6) { grid-column: span 2 !important; }
+    .mode-btn:nth-child(5) { grid-column: span 1 !important; }
+    .mode-btn:nth-child(6) { grid-column: span 1 !important; }
     .mode-btn { padding: 16px 10px 14px; }
     .mode-icon { font-size: 28px; }
 
