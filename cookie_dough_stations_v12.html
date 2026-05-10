@@ -1,0 +1,1009 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Let's Go Cookie Dough — Production</title>
+<link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --slate:       #4a5568;
+    --slate-dark:  #363d4a;
+    --slate-light: #5d6b82;
+    --blue:        #7ab8d4;
+    --blue-light:  #a8d4e8;
+    --blue-dark:   #5a9ab8;
+    --cream:       #f5ead6;
+    --cream-dark:  #e8d5b8;
+    --navy:        #1e2a3a;
+    --pink:        #e8a0b4;
+    --gold:        #c8943a;
+    --text:        #1e2a3a;
+    --text-light:  #f5ead6;
+    --warn-bg:     #fff3cd;
+    --warn-border: #e8943a;
+    --warn-text:   #7a4a10;
+    --danger-bg:   #fde8e8;
+    --danger-border: #e05050;
+    --danger-text: #7a1010;
+    --success:     #4a9e6a;
+    --radius:      18px;
+    --radius-sm:   10px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    font-family: 'Nunito', sans-serif;
+    background: var(--slate-dark);
+    color: var(--text);
+    min-height: 100vh;
+    overflow: hidden;
+  }
+
+  /* ── SPRINKLES BACKGROUND ── */
+  .sprinkles-bg {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    overflow: hidden;
+  }
+  .sprinkle {
+    position: absolute;
+    border-radius: 999px;
+    opacity: 0.18;
+  }
+
+  /* ── MODE SELECTOR ── */
+  #mode-screen {
+    position: relative;
+    z-index: 1;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 16px 24px;
+    overflow: hidden;
+  }
+
+  .brand-header {
+    text-align: center;
+    margin-bottom: 12px;
+    animation: fadeDown 0.5s ease both;
+  }
+
+  .brand-logo {
+    width: min(240px, 36vw);
+    height: auto;
+    display: block;
+    margin: 0 auto 6px;
+    filter: drop-shadow(0 4px 12px rgba(0,0,0,0.4));
+  }
+
+  .brand-sub {
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: var(--blue-light);
+    opacity: 0.8;
+  }
+
+  .sprinkle-divider {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin: 8px 0 14px;
+    opacity: 0.6;
+    width: 100%;
+    max-width: 700px;
+  }
+  .sd-line { flex: 1; height: 2px; background: var(--blue); border-radius: 2px; max-width: 60px; }
+  .sd-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+  .mode-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    width: 100%;
+    max-width: 760px;
+  }
+
+  .mode-btn {
+    background: var(--cream);
+    border: 3px solid var(--cream-dark);
+    border-radius: var(--radius);
+    padding: 14px 12px 12px;
+    cursor: pointer;
+    transition: all 0.18s ease;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.6);
+    animation: fadeUp 0.4s ease both;
+  }
+  .mode-btn::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(255,255,255,0.25) 0%, transparent 50%);
+    pointer-events: none;
+    border-radius: calc(var(--radius) - 3px);
+  }
+  .mode-btn:nth-child(1) { animation-delay: 0.05s; }
+  .mode-btn:nth-child(2) { animation-delay: 0.10s; }
+  .mode-btn:nth-child(3) { animation-delay: 0.15s; }
+  .mode-btn:nth-child(4) { animation-delay: 0.20s; }
+  .mode-btn:nth-child(5) { animation-delay: 0.25s; }
+  .mode-btn:nth-child(6) { animation-delay: 0.30s; }
+
+  .mode-btn:active { transform: scale(0.95) translateY(2px); box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
+  .mode-btn:hover { border-color: var(--blue); }
+
+  .mode-icon { font-size: 26px; margin-bottom: 5px; filter: drop-shadow(0 2px 3px rgba(0,0,0,0.2)); }
+  .mode-label {
+    font-family: 'Pacifico', cursive;
+    font-size: 15px;
+    color: var(--navy);
+    margin-bottom: 5px;
+  }
+  .mode-desc {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--slate);
+    line-height: 1.4;
+  }
+  .mode-arrow {
+    display: inline-block;
+    font-size: 11px;
+    background: var(--blue);
+    color: white;
+    border-radius: 4px;
+    padding: 1px 6px;
+    margin-top: 6px;
+    font-weight: 800;
+  }
+
+  /* ── STATION SCREEN ── */
+  #station-screen {
+    display: none;
+    height: 100vh;
+    overflow: hidden;
+    flex-direction: column;
+    position: relative;
+    z-index: 1;
+  }
+
+  .station-header {
+    padding: 10px 16px 8px;
+    background: var(--navy);
+    border-bottom: 3px solid var(--blue);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+  }
+
+  .back-btn {
+    background: var(--slate);
+    border: 2px solid var(--slate-light);
+    border-radius: 8px;
+    color: var(--cream);
+    padding: 7px 13px;
+    cursor: pointer;
+    font-size: 13px;
+    font-family: 'Nunito', sans-serif;
+    font-weight: 800;
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+  .back-btn:hover { border-color: var(--blue); color: var(--blue-light); }
+  .back-btn:active { transform: scale(0.95); }
+
+  .header-text { flex: 1; }
+  .station-title {
+    font-family: 'Pacifico', cursive;
+    font-size: clamp(18px, 4vw, 24px);
+    color: var(--cream);
+    text-shadow: 2px 2px 0 var(--slate-dark);
+    line-height: 1.1;
+  }
+  .station-subtitle {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--blue-light);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-top: 2px;
+  }
+
+  .station-icon { font-size: 28px; flex-shrink: 0; }
+
+  .station-body {
+    flex: 1;
+    padding: 10px 12px;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: auto;
+    gap: 8px;
+    overflow: hidden;
+    align-content: start;
+  }
+  /* Warning banner spans full width */
+  .station-body > .low-stock-banner { grid-column: 1 / -1; }
+
+  /* ── LOW STOCK BANNER ── */
+  .low-stock-banner {
+    display: none;
+    background: var(--warn-bg);
+    border: 2px solid var(--warn-border);
+    border-radius: var(--radius-sm);
+    padding: 10px 14px;
+    font-size: 13px;
+    font-weight: 800;
+    color: var(--warn-text);
+    gap: 8px;
+    align-items: flex-start;
+  }
+  .low-stock-banner.visible { display: flex; animation: fadeUp 0.3s ease; }
+  .low-stock-banner.critical {
+    background: var(--danger-bg);
+    border-color: var(--danger-border);
+    color: var(--danger-text);
+  }
+  .lsb-icon { font-size: 18px; flex-shrink: 0; }
+  .lsb-items { line-height: 1.6; }
+
+  /* ── FLAVOR CARDS ── */
+  .flavor-card {
+    background: var(--cream);
+    border-radius: var(--radius);
+    border: 3px solid var(--cream-dark);
+    overflow: hidden;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    box-shadow: 0 3px 12px rgba(0,0,0,0.2);
+    animation: fadeUp 0.35s ease both;
+    min-height: 0;
+  }
+  .flavor-card:nth-child(2) { animation-delay: 0.05s; }
+  .flavor-card:nth-child(3) { animation-delay: 0.10s; }
+  .flavor-card:nth-child(4) { animation-delay: 0.15s; }
+  .flavor-card:nth-child(5) { animation-delay: 0.20s; }
+  .flavor-card:nth-child(6) { animation-delay: 0.25s; }
+
+  .flavor-card.warn-low  { border-color: var(--warn-border); }
+  .flavor-card.warn-critical { border-color: var(--danger-border); }
+
+  .flavor-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px 6px;
+    border-bottom: 2px dashed rgba(0,0,0,0.08);
+  }
+
+  .flavor-pill {
+    width: 10px;
+    height: 28px;
+    border-radius: 999px;
+    flex-shrink: 0;
+  }
+
+  .flavor-name {
+    font-family: 'Pacifico', cursive;
+    font-size: 15px;
+    color: var(--navy);
+    flex: 1;
+  }
+
+  .stock-badge {
+    font-size: 11px;
+    font-weight: 900;
+    padding: 3px 10px;
+    border-radius: 999px;
+    background: var(--slate-dark);
+    color: var(--cream);
+    letter-spacing: 0.5px;
+    display: inline-block;
+  }
+  .stock-badge.empty { opacity: 0.3; }
+  .stock-badge.warn  { background: var(--warn-border); color: white; }
+  .stock-badge.crit  { background: var(--danger-border); color: white; animation: pulse 1.2s ease infinite; }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.65; }
+  }
+
+  /* ── PRE MIX QTY ROW ── */
+  .qty-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px 8px;
+  }
+  .qty-stepper {
+    display: flex;
+    align-items: center;
+    background: var(--slate-dark);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .step-btn {
+    background: var(--slate);
+    border: none;
+    color: var(--cream);
+    width: 34px;
+    height: 38px;
+    font-size: 18px;
+    font-weight: 900;
+    cursor: pointer;
+    transition: background 0.12s;
+    font-family: 'Nunito', sans-serif;
+    line-height: 1;
+  }
+  .step-btn:active { background: var(--blue-dark); }
+  .qty-input {
+    background: var(--navy);
+    border: none;
+    color: var(--cream);
+    font-family: 'Nunito', sans-serif;
+    font-size: 22px;
+    font-weight: 900;
+    text-align: center;
+    width: 52px;
+    height: 38px;
+    outline: none;
+    padding: 0 4px;
+  }
+  .qty-input::-webkit-outer-spin-button,
+  .qty-input::-webkit-inner-spin-button { -webkit-appearance: none; }
+  .qty-input[type=number] { -moz-appearance: textfield; }
+
+  .qty-label { color: var(--slate); font-size: 12px; font-weight: 700; }
+
+  .add-btn {
+    margin-left: auto;
+    background: var(--navy);
+    color: var(--cream);
+    border: 2px solid var(--blue);
+    border-radius: 10px;
+    font-family: 'Nunito', sans-serif;
+    font-size: 15px;
+    font-weight: 900;
+    letter-spacing: 0.5px;
+    padding: 7px 12px;
+    cursor: pointer;
+    transition: all 0.15s;
+    box-shadow: 0 3px 0 var(--blue-dark);
+  }
+  .add-btn:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--blue-dark); }
+  .add-btn:hover { background: var(--blue-dark); border-color: var(--blue-light); }
+
+  /* ── SINGLE ACTION BUTTON ── */
+  .action-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    width: calc(100% - 28px);
+    margin: 2px 14px 12px;
+    padding: 10px 10px;
+    background: var(--navy);
+    color: var(--cream);
+    border: 2px solid var(--blue);
+    border-radius: 12px;
+    font-family: 'Nunito', sans-serif;
+    font-size: 14px;
+    font-weight: 900;
+    letter-spacing: 0.3px;
+    cursor: pointer;
+    transition: all 0.15s;
+    box-shadow: 0 4px 0 var(--blue-dark);
+    position: relative;
+    overflow: hidden;
+  }
+  .action-btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(255,255,255,0.06) 0%, transparent 60%);
+    pointer-events: none;
+  }
+  .action-btn:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--blue-dark); }
+  .action-btn:hover { background: var(--slate-dark); }
+  .action-btn .from { color: var(--blue-light); font-weight: 900; }
+  .action-btn .arrow { font-size: 20px; opacity: 0.6; }
+  .action-btn .to { color: var(--cream); font-weight: 900; }
+
+  /* ── DUAL DESTINATION BUTTONS ── */
+  .dual-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    padding: 2px 10px 8px;
+  }
+  .dest-btn {
+    padding: 8px 6px;
+    border: 2px solid;
+    border-radius: 12px;
+    background: var(--navy);
+    font-family: 'Nunito', sans-serif;
+    font-size: 16px;
+    font-weight: 900;
+    letter-spacing: 0.3px;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+  }
+  .dest-btn:active { transform: translateY(2px); }
+  .dest-btn .dest-icon { font-size: 18px; }
+  .dest-btn.trailer {
+    border-color: var(--blue);
+    color: var(--blue-light);
+    box-shadow: 0 3px 0 var(--blue-dark);
+  }
+  .dest-btn.trailer:active { box-shadow: 0 1px 0 var(--blue-dark); }
+  .dest-btn.trailer:hover { background: rgba(90,154,184,0.2); }
+  .dest-btn.van {
+    border-color: var(--pink);
+    color: var(--pink);
+    box-shadow: 0 3px 0 #b07080;
+  }
+  .dest-btn.van:active { box-shadow: 0 1px 0 #b07080; }
+  .dest-btn.van:hover { background: rgba(232,160,180,0.15); }
+
+  /* ── TOAST ── */
+  #toast {
+    position: fixed;
+    bottom: 28px;
+    left: 50%;
+    transform: translateX(-50%) translateY(90px);
+    background: var(--navy);
+    border: 2.5px solid var(--blue);
+    border-radius: 14px;
+    padding: 13px 22px;
+    font-family: 'Nunito', sans-serif;
+    font-size: 14px;
+    font-weight: 800;
+    color: var(--cream);
+    z-index: 200;
+    transition: transform 0.35s cubic-bezier(0.34,1.56,0.64,1);
+    white-space: nowrap;
+    pointer-events: none;
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  }
+  #toast.show { transform: translateX(-50%) translateY(0); }
+  #toast.success { border-color: var(--success); }
+  #toast.warning { border-color: var(--warn-border); }
+  #toast.error   { border-color: var(--danger-border); }
+  .toast-icon { font-size: 18px; }
+
+  /* ── LOADING ── */
+  .btn-loading { opacity: 0.5; pointer-events: none; }
+
+  /* ── ANIMATIONS ── */
+  @keyframes fadeDown {
+    from { opacity: 0; transform: translateY(-18px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(14px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+</style>
+</head>
+<body>
+
+<div class="sprinkles-bg" id="sprinkles-bg"></div>
+
+<!-- MODE SELECTOR -->
+<div id="mode-screen">
+  <div class="brand-header">
+    <img class="brand-logo" src="https://www.dropbox.com/scl/fi/kc7cu0o6rudref3t2g734/CD-Logo-words.jpg?rlkey=6nro31r8hn2bz83n77d1ro7oe&st=1i0svgik&dl=1" alt="Let's Go Cookie Dough!">
+    <div class="brand-sub">Production Control</div>
+    <div class="sprinkle-divider">
+      <div class="sd-line"></div>
+      <div class="sd-dot" style="background:#e8a0b4"></div>
+      <div class="sd-dot" style="background:#7ab8d4"></div>
+      <div class="sd-dot" style="background:#c8943a"></div>
+      <div class="sd-line"></div>
+    </div>
+  </div>
+  <div class="mode-grid">
+    <div class="mode-btn" onclick="openStation('premix')">
+      <div class="mode-icon">🥣</div>
+      <div class="mode-label">Pre Mix</div>
+      <div class="mode-desc">Add qty to<br>Pre Mix</div>
+    </div>
+    <div class="mode-btn" onclick="openStation('mix')">
+      <div class="mode-icon">🔄</div>
+      <div class="mode-label">Mix Table</div>
+      <div class="mode-desc">Pre Mix<div class="mode-arrow">→ Freezer</div></div>
+    </div>
+    <div class="mode-btn" onclick="openStation('freezer')">
+      <div class="mode-icon">🧊</div>
+      <div class="mode-label">Freezer</div>
+      <div class="mode-desc">To Van<br>or Trailer</div>
+    </div>
+    <div class="mode-btn" onclick="openStation('trailer')">
+      <div class="mode-icon">🚚</div>
+      <div class="mode-label">Trailer</div>
+      <div class="mode-desc">Trailer<div class="mode-arrow">→ Used</div></div>
+    </div>
+    <div class="mode-btn" onclick="openStation('van')">
+      <div class="mode-icon">🚐</div>
+      <div class="mode-label">Van</div>
+      <div class="mode-desc">Van <span style="display:inline-block" class="mode-arrow">→ Used</span></div>
+    </div>
+    <div class="mode-btn" onclick="refreshAllStock()" style="background: var(--navy); border-color: var(--blue);">
+      <div class="mode-icon">📊</div>
+      <div class="mode-label" style="color: var(--cream);">Refresh Stock</div>
+      <div class="mode-desc" style="color: var(--blue-light);">Pull latest counts from spreadsheet</div>
+    </div>
+  </div>
+</div>
+
+<!-- STATION SCREEN -->
+<div id="station-screen">
+  <div class="station-header">
+    <button class="back-btn" onclick="goBack()">← Back</button>
+    <div class="header-text">
+      <div class="station-title" id="station-title">Station</div>
+      <div class="station-subtitle" id="station-subtitle">subtitle</div>
+    </div>
+    <div class="station-icon" id="station-icon"></div>
+  </div>
+  <div class="station-body" id="station-body"></div>
+</div>
+
+<!-- STOCK MODAL -->
+<div id="stock-modal" style="display:none; position:fixed; inset:0; z-index:150; align-items:center; justify-content:center; padding:20px;">
+  <div id="stock-modal-backdrop" onclick="closeStockModal()" style="position:absolute; inset:0; background:rgba(0,0,0,0.6); backdrop-filter:blur(3px);"></div>
+  <div style="position:relative; background:var(--cream); border-radius:var(--radius); width:100%; max-width:480px; overflow:hidden; box-shadow:0 20px 60px rgba(0,0,0,0.5); animation:fadeUp 0.3s ease both;">
+    <div style="background:var(--navy); padding:16px 18px; border-bottom:3px solid var(--blue); display:flex; align-items:center; justify-content:space-between;">
+      <div>
+        <div style="font-family:'Pacifico',cursive; color:var(--cream); font-size:18px;">Current Stock</div>
+        <div style="font-size:11px; font-weight:700; color:var(--blue-light); letter-spacing:1px; text-transform:uppercase; margin-top:2px;" id="stock-modal-time"></div>
+      </div>
+      <button onclick="closeStockModal()" style="background:var(--slate); border:2px solid var(--slate-light); border-radius:8px; color:var(--cream); padding:6px 12px; cursor:pointer; font-family:'Nunito',sans-serif; font-weight:800; font-size:13px;">✕ Close</button>
+    </div>
+    <div style="overflow-x:auto; padding:16px;">
+      <table id="stock-table" style="width:100%; border-collapse:collapse; font-family:'Nunito',sans-serif; font-size:14px;">
+        <thead>
+          <tr>
+            <th style="text-align:left; padding:8px 10px; background:var(--slate-dark); color:var(--cream); border-radius:8px 0 0 8px; font-weight:900;">Flavor</th>
+            <th style="padding:8px 8px; background:var(--slate-dark); color:var(--blue-light); font-weight:900; text-align:center;">Pre Mix</th>
+            <th style="padding:8px 8px; background:var(--slate-dark); color:var(--blue-light); font-weight:900; text-align:center;">Freezer</th>
+            <th style="padding:8px 8px; background:var(--slate-dark); color:var(--blue-light); font-weight:900; text-align:center;">Trailer</th>
+            <th style="padding:8px 8px; background:var(--slate-dark); color:var(--blue-light); font-weight:900; text-align:center; border-radius:0 8px 8px 0;">Van</th>
+          </tr>
+        </thead>
+        <tbody id="stock-table-body"></tbody>
+      </table>
+      <div style="margin-top:12px; font-size:11px; font-weight:700; color:var(--slate); display:flex; gap:16px; flex-wrap:wrap;">
+        <span>⚠️ Low stock</span>
+        <span>🚨 Critical</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast">
+  <span class="toast-icon" id="toast-icon">✓</span>
+  <span id="toast-msg">Done</span>
+</div>
+
+<script>
+const WEBHOOKS = {
+  premix:  'https://default1ebf792d925a4261a8639b048282d6.65.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/e0830baef65c4ad4b4f754b03ccf3aaf/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=t4Fp3bichjgqF8Rmxf8dpvtCoIKhx23LtACy5z9aGdY',
+  mix:     'https://default1ebf792d925a4261a8639b048282d6.65.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/15900ab965cb4f5b85c271029246ba1f/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=2y-Y0n5Xx-zc6PlPMmOQq3OXFPb9B-Tc1E1Zk-rkLnI',
+  freezer: 'https://default1ebf792d925a4261a8639b048282d6.65.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/dc7a0408362042889311eeefef2bfa4e/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=nyeH6qvm93hLYV_7FNK8dILnQ-jxmTU8Lm9tS3AiH1g',
+  trailer: 'https://default1ebf792d925a4261a8639b048282d6.65.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/feeac75b77754d1a8366bbd745b31947/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=stef4S4mCReQXyrZ9aLfTzd-fuMqZMM8vvg8N4DwZd0',
+  van:     'https://default1ebf792d925a4261a8639b048282d6.65.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/09e17d51d2534bac81db3e6b4e4d8e36/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=OJXcGJfkT9z4zobMTd_cDgswXWRZKOUZK5Iw5W-H50w',
+  getstock: 'https://default1ebf792d925a4261a8639b048282d6.65.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/f72109894f834a15a5ac92fab5f1753d/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=n7oh-5gU3zVSmRjyKFrkM0rKvm-5lZSTGK7SvwZTgyA',
+};
+
+const THRESHOLDS = {
+  'Chip':    { premix: 10, freezer: 10 },
+  'Monster': { premix: 10, freezer: 10 },
+  'Smores':  { premix: 10, freezer: 5  },
+  'Brownie': { premix: 10, freezer: 5  },
+  'GF Chip': { premix: 10, freezer: 3  },
+};
+
+const FLAVORS = [
+  { name: 'Chip',    color: '#c8943a', row: 2 },
+  { name: 'Monster', color: '#4a9e6a', row: 3 },
+  { name: 'Smores',  color: '#c0855a', row: 4 },
+  { name: 'Brownie', color: '#8b5e3c', row: 5 },
+  { name: 'GF Chip', color: '#9a7abf', row: 6 },
+];
+
+const STATIONS = {
+  premix:  { title: "Pre Mix",   subtitle: "Add qty to Pre Mix",        icon: '🥣' },
+  mix:     { title: "Mix Table", subtitle: "Pre Mix → Freezer",         icon: '🔄' },
+  freezer: { title: "Freezer",   subtitle: "Freezer → Van or Trailer",  icon: '🧊' },
+  trailer: { title: "Trailer",   subtitle: "Trailer → Trailer Used",    icon: '🚚' },
+  van:     { title: "Van",       subtitle: "Van → Van Used",             icon: '🚐' },
+};
+
+let stockCache = {};
+let currentStation = null;
+
+// ── SPRINKLES ────────────────────────────────────────────────────────────────
+(function buildSprinkles() {
+  const colors = ['#7ab8d4','#e8a0b4','#c8943a','#9a7abf','#4a9e6a'];
+  const container = document.getElementById('sprinkles-bg');
+  for (let i = 0; i < 38; i++) {
+    const el = document.createElement('div');
+    el.className = 'sprinkle';
+    const w = 6 + Math.random() * 8;
+    const h = 18 + Math.random() * 22;
+    const rot = Math.random() * 360;
+    el.style.cssText = `width:${w}px;height:${h}px;left:${Math.random()*100}%;top:${Math.random()*100}%;background:${colors[i%colors.length]};transform:rotate(${rot}deg);border-radius:999px;`;
+    container.appendChild(el);
+  }
+})();
+
+// ── NAVIGATION ───────────────────────────────────────────────────────────────
+function openStation(mode) {
+  currentStation = mode;
+  const s = STATIONS[mode];
+  document.getElementById('station-title').textContent = s.title;
+  document.getElementById('station-subtitle').textContent = s.subtitle;
+  document.getElementById('station-icon').textContent = s.icon;
+  document.getElementById('mode-screen').style.display = 'none';
+  document.getElementById('station-screen').style.display = 'flex';
+  buildAndRender(mode);
+  fetchStock(mode);
+}
+
+function goBack() {
+  document.getElementById('station-screen').style.display = 'none';
+  document.getElementById('mode-screen').style.display = 'flex';
+  currentStation = null;
+  stockCache = {};
+}
+
+// ── STOCK FETCH ──────────────────────────────────────────────────────────────
+async function fetchStock(mode) {
+  if (!WEBHOOKS.getstock || WEBHOOKS.getstock.includes('YOUR-')) return;
+  try {
+    const resp = await fetch(WEBHOOKS.getstock, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ mode })
+    });
+    if (resp.ok) {
+      stockCache = await resp.json();
+      // Always refresh badges using the active station
+      const activeMode = currentStation || mode;
+      refreshWarnings(activeMode);
+    }
+  } catch (e) {}
+}
+
+async function refreshAllStock() {
+  if (!WEBHOOKS.getstock || WEBHOOKS.getstock.includes('YOUR-')) {
+    showToast('Get Stock webhook not set up yet', 'error');
+    return;
+  }
+  showToast('Refreshing stock...', 'warning');
+  try {
+    const resp = await fetch(WEBHOOKS.getstock, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ mode: 'all' })
+    });
+    if (resp.ok) {
+      stockCache = await resp.json();
+      showStockModal();
+    } else {
+      showToast(`Error ${resp.status} — try again`, 'error');
+    }
+  } catch (e) {
+    showToast('Could not reach spreadsheet', 'error');
+  }
+}
+
+function showStockModal() {
+  buildStockTable();
+  const now = new Date();
+  document.getElementById('stock-modal-time').textContent =
+    'Updated ' + now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  const modal = document.getElementById('stock-modal');
+  modal.style.display = 'flex';
+}
+
+function closeStockModal() {
+  document.getElementById('stock-modal').style.display = 'none';
+}
+
+function buildStockTable() {
+  const tbody = document.getElementById('stock-table-body');
+  tbody.innerHTML = '';
+
+  FLAVORS.forEach((f, i) => {
+    const data = stockCache[f.name] || {};
+    const cols = ['premix', 'freezer', 'trailer', 'van'];
+    const rowBg = i % 2 === 0 ? 'rgba(0,0,0,0.03)' : 'white';
+
+    let cells = '';
+    cols.forEach(col => {
+      const val = data[col] ?? '—';
+      const threshold = THRESHOLDS[f.name]?.[col];
+      let indicator = '';
+      let cellStyle = 'padding:10px 8px; text-align:center; font-weight:800; font-size:15px;';
+
+      if (threshold != null && typeof val === 'number') {
+        if (val <= Math.floor(threshold / 2)) {
+          indicator = ' 🚨';
+          cellStyle += ' color:var(--danger-border);';
+        } else if (val < threshold) {
+          indicator = ' ⚠️';
+          cellStyle += ' color:var(--warn-border);';
+        } else {
+          cellStyle += ' color:var(--navy);';
+        }
+      } else {
+        cellStyle += ' color:var(--navy);';
+      }
+      cells += `<td style="${cellStyle}">${val}${indicator}</td>`;
+    });
+
+    tbody.innerHTML += `
+      <tr style="background:${rowBg}; border-bottom:1px solid var(--cream-dark);">
+        <td style="padding:10px 10px; font-weight:900; color:var(--navy); display:flex; align-items:center; gap:8px;">
+          <span style="width:8px; height:8px; border-radius:50%; background:${f.color}; display:inline-block; flex-shrink:0;"></span>
+          ${f.name}
+        </td>
+        ${cells}
+      </tr>`;
+  });
+}
+
+// ── BUILD UI ─────────────────────────────────────────────────────────────────
+function buildAndRender(mode) {
+  const body = document.getElementById('station-body');
+  body.innerHTML = '';
+
+  const banner = document.createElement('div');
+  banner.className = 'low-stock-banner';
+  banner.id = 'low-stock-banner';
+  banner.innerHTML = '<span class="lsb-icon">⚠️</span><div class="lsb-items" id="lsb-items"></div>';
+  body.appendChild(banner);
+
+  FLAVORS.forEach(f => {
+    const card = document.createElement('div');
+    card.className = 'flavor-card';
+    card.id = `card-${mode}-${f.row}`;
+    card.dataset.flavor = f.name;
+
+    // Qty stepper is shared across all modes
+    const stepperHtml = `
+      <div class="qty-stepper">
+        <button class="step-btn" onclick="stepQty('${f.row}-${mode}',-1)">−</button>
+        <input class="qty-input" type="number" min="1" max="999" value="1" id="qty-${f.row}-${mode}" inputmode="numeric">
+        <button class="step-btn" onclick="stepQty('${f.row}-${mode}',1)">+</button>
+      </div>`;
+
+    let inner = '';
+    if (mode === 'premix') {
+      inner = `
+        <div class="qty-row">
+          ${stepperHtml}
+          <span class="qty-label">batches</span>
+          <button class="add-btn" onclick="fireAction('premix','${f.name}',${f.row})">ADD ✓</button>
+        </div>`;
+    } else if (mode === 'freezer') {
+      inner = `
+        <div class="qty-row" style="padding-bottom:8px">
+          ${stepperHtml}
+          <span class="qty-label">qty</span>
+        </div>
+        <div class="dual-row">
+          <button class="dest-btn trailer" onclick="fireAction('freezer','${f.name}',${f.row},'trailer')">
+            <span class="dest-icon">🚚</span>TRAILER
+            <span style="font-size:11px; font-weight:900; opacity:0.85;" id="trailer-badge-${f.row}">— on hand</span>
+          </button>
+          <button class="dest-btn van" onclick="fireAction('freezer','${f.name}',${f.row},'van')">
+            <span class="dest-icon">🚐</span>VAN
+            <span style="font-size:11px; font-weight:900; opacity:0.85;" id="van-badge-${f.row}">— on hand</span>
+          </button>
+        </div>`;
+    } else {
+      const labels = { mix:['Pre Mix','Freezer'], trailer:['Trailer','Trailer Used'], van:['Van','Van Used'] };
+      const [from, to] = labels[mode];
+      inner = `
+        <div class="qty-row">
+          ${stepperHtml}
+          <span class="qty-label">qty</span>
+          <button class="add-btn" onclick="fireAction('${mode}','${f.name}',${f.row})">
+            ${from} → ${to}
+          </button>
+        </div>`;
+    }
+
+    card.innerHTML = `
+      <div class="flavor-header">
+        <div class="flavor-pill" style="background:${f.color}"></div>
+        <div class="flavor-name">${f.name}</div>
+        <span class="stock-badge" id="badge-${f.row}"></span>
+      </div>
+      ${inner}`;
+    body.appendChild(card);
+  });
+}
+
+function stepQty(key, delta) {
+  const input = document.getElementById(`qty-${key}`);
+  if (!input) return;
+  input.value = Math.max(1, (parseInt(input.value) || 1) + delta);
+}
+
+// ── WARNINGS & BADGES ────────────────────────────────────────────────────────
+function refreshWarnings(mode) {
+  const locKey = {
+    premix:  'premix',
+    mix:     'premix',
+    freezer: 'freezer',
+    trailer: 'trailer',
+    van:     'van',
+  }[mode];
+
+  if (!locKey) return;
+
+  const warnings = [], criticals = [];
+
+  FLAVORS.forEach(f => {
+    const count     = stockCache[f.name]?.[locKey];
+    const card      = document.getElementById(`card-${currentStation}-${f.row}`);
+    const badge     = document.getElementById(`badge-${f.row}`);
+    const threshold = THRESHOLDS[f.name]?.[locKey];
+
+    // On freezer screen, update trailer and van destination badges
+    if (mode === 'freezer') {
+      const trailerCount = stockCache[f.name]?.trailer;
+      const vanCount     = stockCache[f.name]?.van;
+      const tBadge = document.getElementById(`trailer-badge-${f.row}`);
+      const vBadge = document.getElementById(`van-badge-${f.row}`);
+      if (tBadge) tBadge.textContent = trailerCount != null ? `${trailerCount} on hand` : '— on hand';
+      if (vBadge) vBadge.textContent = vanCount != null ? `${vanCount} on hand` : '— on hand';
+
+      // Freezer banner warns about freezer stock (what you're pulling from)
+      if (threshold != null && count != null) {
+        if (count <= Math.floor(threshold / 2)) {
+          card?.classList.add('warn-critical'); card?.classList.remove('warn-low');
+          if (badge) { badge.textContent = `${count} on hand`; badge.className = 'stock-badge crit'; }
+          criticals.push(`${f.name} freezer: ${count} left (need ${threshold})`);
+        } else if (count < threshold) {
+          card?.classList.add('warn-low'); card?.classList.remove('warn-critical');
+          if (badge) { badge.textContent = `${count} on hand`; badge.className = 'stock-badge warn'; }
+          warnings.push(`${f.name} freezer: ${count} left (min ${threshold})`);
+        } else {
+          card?.classList.remove('warn-low','warn-critical');
+          if (badge) { badge.textContent = `${count} on hand`; badge.className = 'stock-badge'; }
+        }
+      }
+      return;
+    }
+
+    // All other stations — always show count
+    if (badge) {
+      if (count != null) {
+        badge.textContent = `${count} on hand`;
+      } else {
+        badge.textContent = '— on hand';
+        badge.className = 'stock-badge empty';
+        return;
+      }
+    }
+
+    // Apply warning levels
+    if (threshold != null && count != null) {
+      if (count <= Math.floor(threshold / 2)) {
+        card?.classList.add('warn-critical'); card?.classList.remove('warn-low');
+        if (badge) badge.className = 'stock-badge crit';
+        criticals.push(`${f.name}: ${count} left (need ${threshold})`);
+      } else if (count < threshold) {
+        card?.classList.add('warn-low'); card?.classList.remove('warn-critical');
+        if (badge) badge.className = 'stock-badge warn';
+        warnings.push(`${f.name}: ${count} left (min ${threshold})`);
+      } else {
+        card?.classList.remove('warn-low','warn-critical');
+        if (badge) badge.className = 'stock-badge';
+      }
+    } else {
+      card?.classList.remove('warn-low','warn-critical');
+      if (badge) badge.className = 'stock-badge';
+    }
+  });
+
+  const banner = document.getElementById('low-stock-banner');
+  const items  = document.getElementById('lsb-items');
+  if (!banner || !items) return;
+
+  if (criticals.length > 0) {
+    banner.className = 'low-stock-banner visible critical';
+    banner.querySelector('.lsb-icon').textContent = '🚨';
+    items.innerHTML = '<strong>CRITICAL — running very low:</strong><br>' + criticals.join('<br>') +
+      (warnings.length ? '<br><strong>Low:</strong> ' + warnings.join(', ') : '');
+  } else if (warnings.length > 0) {
+    banner.className = 'low-stock-banner visible';
+    banner.querySelector('.lsb-icon').textContent = '⚠️';
+    items.innerHTML = '<strong>Low stock — consider making more:</strong><br>' + warnings.join('<br>');
+  } else {
+    banner.className = 'low-stock-banner';
+  }
+}
+
+// ── FIRE ACTION ──────────────────────────────────────────────────────────────
+async function fireAction(mode, flavor, row, destination) {
+  const payload = { flavor, row, mode };
+  const qtyKey = `qty-${row}-${mode}`;
+  const qty = parseInt(document.getElementById(qtyKey)?.value) || 1;
+  payload.qty = qty;
+  if (mode === 'freezer') payload.destination = destination;
+
+  const card = document.getElementById(`card-${mode}-${row}`);
+  card?.querySelectorAll('button').forEach(b => b.classList.add('btn-loading'));
+
+  try {
+    const resp = await fetch(WEBHOOKS[mode], {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+
+    if (resp.ok || resp.status === 202) {
+      const destLabel = destination ? ` → ${destination}` : '';
+      const qtyLabel = qty > 1 ? ` ×${qty}` : '';
+      showToast(`${flavor}${destLabel}${qtyLabel} — done! 🍪`, 'success');
+
+      // Reset stepper to 1
+      const input = document.getElementById(qtyKey);
+      if (input) input.value = 1;
+
+      // Wait 3s for Power Automate to finish writing to Excel, then fetch fresh stock
+      setTimeout(async () => {
+        await fetchStock(currentStation || mode);
+      }, 3000);
+
+    } else {
+      showToast(`Error ${resp.status} — try again`, 'error');
+    }
+  } catch (e) {
+    showToast(`[DEMO] ${flavor} moved 🍪`, 'success');
+  } finally {
+    card?.querySelectorAll('button').forEach(b => b.classList.remove('btn-loading'));
+  }
+}
+
+// ── TOAST ─────────────────────────────────────────────────────────────────────
+let toastTimer;
+function showToast(msg, type = 'success') {
+  const el = document.getElementById('toast');
+  document.getElementById('toast-icon').textContent = type === 'success' ? '🍪' : type === 'warning' ? '⚠️' : '✕';
+  document.getElementById('toast-msg').textContent = msg;
+  el.className = type;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 2800);
+}
+</script>
+</body>
+</html>
