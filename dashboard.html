@@ -533,21 +533,131 @@ function renderStock(url) {
   container.innerHTML = `<iframe id="stock-frame" src="${url}" allowfullscreen></iframe>`;
 }
 
-// ── ICAL PARSER ───────────────────────────────────────────────────────────────
+// ── ICAL PARSER (with RRULE recurrence expansion) ────────────────────────────
 function parseICal(text) {
+  // Unfold folded lines (RFC 5545: lines folded with CRLF + whitespace)
+  text = text.replace(/\r\n[ \t]/g, '').replace(/\r/g, '');
+
   const events = [];
   const blocks = text.split('BEGIN:VEVENT');
   blocks.shift();
+
+  const now = new Date();
+  const windowEnd = new Date(now); windowEnd.setDate(windowEnd.getDate() + 22);
+  const windowStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
   for (const block of blocks) {
     const get = key => {
-      const m = block.match(new RegExp(`${key}[^:]*:([^\\r\\n]+)`, 'i'));
+      const m = block.match(new RegExp(`(?:^|\\n)${key}[^:\\n]*:([^\\n]+)`, 'i'));
       return m ? m[1].trim() : '';
     };
-    const summary  = get('SUMMARY').replace(/\\,/g,',').replace(/\\n/g,' ');
-    const location = get('LOCATION').replace(/\\,/g,',');
+
+    const summary  = get('SUMMARY').replace(/\\,/g,',').replace(/\\n/g,' ').replace(/\\;/g,';');
+    const location = get('LOCATION').replace(/\\,/g,',').replace(/\\n/g,' ');
     const dtstart  = get('DTSTART');
+    const dtend    = get('DTEND');
+    const rrule    = get('RRULE');
+    // Collect EXDATEs (exception dates — cancelled occurrences)
+    const exdates  = [];
+    const exRe = /(?:^|\n)EXDATE[^:\n]*:([^\n]+)/gi;
+    let exMatch;
+    while ((exMatch = exRe.exec(block)) !== null) {
+      exMatch[1].trim().split(',').forEach(d => exdates.push(d.trim().replace(/[TZ]/g,'').slice(0,8)));
+    }
+
     if (!summary || !dtstart) continue;
-    events.push({ summary, location, dtstart });
+
+    const startDate = parseICalDate(dtstart);
+    if (!startDate) continue;
+
+    if (!rrule) {
+      // Non-recurring: just add if in window
+      if (startDate >= windowStart && startDate <= windowEnd) {
+        events.push({ summary, location, dtstart, dtend });
+      }
+      continue;
+    }
+
+    // ── Expand recurrence ──
+    const rule = {};
+    rrule.split(';').forEach(part => {
+      const [k,v] = part.split('=');
+      rule[k.toUpperCase()] = v;
+    });
+
+    const freq     = rule['FREQ'] || '';
+    const interval = parseInt(rule['INTERVAL'] || '1');
+    const count    = rule['COUNT']  ? parseInt(rule['COUNT'])  : null;
+    const untilStr = rule['UNTIL'];
+    const until    = untilStr ? parseICalDate(untilStr) : null;
+    const byDay    = rule['BYDAY']  ? rule['BYDAY'].split(',')  : null;
+
+    // Day-of-week map
+    const DOW = { SU:0, MO:1, TU:2, WE:3, TH:4, FR:5, SA:6 };
+
+    let cursor = new Date(startDate);
+    let occurrenceCount = 0;
+    const maxIterations = 500; // safety cap
+    let iterations = 0;
+
+    while (iterations++ < maxIterations) {
+      // Stop conditions
+      if (until && cursor > until) break;
+      if (count !== null && occurrenceCount >= count) break;
+      if (cursor > windowEnd) break;
+
+      // Check if this occurrence is in our display window
+      if (cursor >= windowStart) {
+        const exKey = `${cursor.getFullYear()}${String(cursor.getMonth()+1).padStart(2,'0')}${String(cursor.getDate()).padStart(2,'0')}`;
+        if (!exdates.includes(exKey)) {
+          // Rebuild dtstart string with this cursor date
+          const allDay = isAllDay(dtstart);
+          let newDtstart;
+          if (allDay) {
+            newDtstart = `${cursor.getFullYear()}${String(cursor.getMonth()+1).padStart(2,'0')}${String(cursor.getDate()).padStart(2,'0')}`;
+          } else {
+            // Keep original time, just advance date
+            newDtstart = `${cursor.getFullYear()}${String(cursor.getMonth()+1).padStart(2,'0')}${String(cursor.getDate()).padStart(2,'0')}T${dtstart.includes('T') ? dtstart.split('T')[1] : '000000'}`;
+          }
+          events.push({ summary, location, dtstart: newDtstart, dtend });
+        }
+      }
+
+      occurrenceCount++;
+
+      // Advance cursor by frequency
+      if (freq === 'DAILY') {
+        cursor = new Date(cursor); cursor.setDate(cursor.getDate() + interval);
+      } else if (freq === 'WEEKLY') {
+        if (byDay && byDay.length > 1) {
+          // Multiple days per week (e.g. MO,WE,FR)
+          // Find next matching day within the week
+          let advanced = false;
+          for (let d = 1; d <= 7; d++) {
+            const next = new Date(cursor); next.setDate(next.getDate() + d);
+            const nextDow = ['SU','MO','TU','WE','TH','FR','SA'][next.getDay()];
+            if (byDay.some(bd => bd.replace(/[+-\d]/g,'') === nextDow)) {
+              // Check if still within same week cycle
+              const weekDiff = Math.floor((next - startDate) / (7 * 24 * 3600 * 1000));
+              if (weekDiff % interval === 0 || d <= 6) {
+                cursor = next; advanced = true; break;
+              }
+            }
+          }
+          if (!advanced) {
+            cursor = new Date(cursor); cursor.setDate(cursor.getDate() + 7 * interval);
+          }
+        } else {
+          cursor = new Date(cursor); cursor.setDate(cursor.getDate() + 7 * interval);
+        }
+      } else if (freq === 'MONTHLY') {
+        cursor = new Date(cursor); cursor.setMonth(cursor.getMonth() + interval);
+      } else if (freq === 'YEARLY') {
+        cursor = new Date(cursor); cursor.setFullYear(cursor.getFullYear() + interval);
+      } else {
+        break; // unknown freq
+      }
+    }
   }
   return events;
 }
@@ -557,10 +667,12 @@ function parseICalDate(str) {
   const c = str.replace(/[TZ]/g,'').replace(/[-:]/g,'');
   if (c.length === 8)
     return new Date(+c.slice(0,4), +c.slice(4,6)-1, +c.slice(6,8));
-  return new Date(+c.slice(0,4), +c.slice(4,6)-1, +c.slice(6,8), +c.slice(8,10), +c.slice(10,12));
+  if (c.length >= 14)
+    return new Date(+c.slice(0,4), +c.slice(4,6)-1, +c.slice(6,8), +c.slice(8,10), +c.slice(10,12));
+  return null;
 }
 
-function isAllDay(dtstart) { return dtstart.length === 8 || !dtstart.includes('T'); }
+function isAllDay(dtstart) { return !dtstart.includes('T'); }
 function dayKey(d) { return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`; }
 function sameDay(a,b) {
   return a.getFullYear()===b.getFullYear() && a.getMonth()===b.getMonth() && a.getDate()===b.getDate();
