@@ -99,7 +99,7 @@
   /* ── MAIN SPLIT ── */
   .main {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr 2fr;
     flex: 1;
     overflow: hidden;
   }
@@ -160,11 +160,18 @@
 
   /* ── CALENDAR PANEL ── */
   .calendar-body {
-    flex: 1; overflow-y: auto; padding: 0;
-    scrollbar-width: thin; scrollbar-color: var(--border) transparent;
+    flex: 1;
+    overflow: hidden;
+    padding: 10px 14px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-auto-rows: min-content;
+    gap: 0 2px;
+    align-content: start;
   }
 
   .cal-status {
+    grid-column: 1 / -1;
     display: flex; flex-direction: column;
     align-items: center; justify-content: center;
     height: 100%; gap: 12px;
@@ -185,6 +192,7 @@
   .day-group {
     border-bottom: 1px solid var(--border);
     animation: fadeUp 0.4s ease both;
+    min-width: 0;
   }
   @keyframes fadeUp {
     from { opacity:0; transform:translateY(8px); }
@@ -192,54 +200,51 @@
   }
 
   .day-label {
-    display: flex; align-items: baseline; gap: 10px;
-    padding: 12px 24px 8px;
-    position: sticky; top: 0;
-    background: var(--bg); z-index: 2;
+    display: flex; align-items: baseline; gap: 8px;
+    padding: 8px 14px 5px;
+    background: var(--bg);
     border-bottom: 1px solid var(--border);
   }
   .day-label.is-today { background: var(--today-bg); }
 
   .day-name {
     font-family: 'Bebas Neue', sans-serif;
-    font-size: 1.4rem; letter-spacing: 0.1em;
+    font-size: 1.1rem; letter-spacing: 0.1em;
   }
   .day-label.is-today .day-name { color: var(--accent); }
 
   .day-date {
     font-family: 'DM Mono', monospace;
-    font-size: 0.8rem; color: var(--muted);
+    font-size: 0.7rem; color: var(--muted);
   }
 
   .today-tag {
-    font-size: 0.65rem; font-family: 'DM Mono', monospace;
+    font-size: 0.6rem; font-family: 'DM Mono', monospace;
     background: var(--accent); color: #000;
-    padding: 2px 7px; border-radius: 2px;
+    padding: 1px 5px; border-radius: 2px;
     letter-spacing: 0.08em; font-weight: 700;
     text-transform: uppercase;
   }
 
   .event-row {
     display: flex; align-items: flex-start;
-    gap: 16px; padding: 11px 24px;
+    gap: 10px; padding: 7px 14px;
     border-left: 3px solid transparent;
-    transition: background 0.15s;
   }
-  .event-row:hover { background: rgba(255,255,255,0.03); }
   .event-row.all-day { border-left-color: var(--accent2); }
   .event-row.timed   { border-left-color: var(--accent); }
 
   .event-time {
-    font-family: 'DM Mono', monospace; font-size: 0.85rem;
-    color: var(--muted); min-width: 80px; padding-top: 2px; flex-shrink: 0;
+    font-family: 'DM Mono', monospace; font-size: 0.75rem;
+    color: var(--muted); min-width: 66px; padding-top: 1px; flex-shrink: 0;
   }
   .event-row.all-day .event-time {
-    color: var(--accent2); font-size: 0.75rem;
+    color: var(--accent2); font-size: 0.68rem;
     text-transform: uppercase; letter-spacing: 0.08em;
   }
 
-  .event-title { font-size: 1rem; font-weight: 500; line-height: 1.4; flex: 1; }
-  .event-loc   { font-size: 0.75rem; color: var(--muted); margin-top: 3px; font-family: 'DM Mono', monospace; }
+  .event-title { font-size: 0.88rem; font-weight: 500; line-height: 1.35; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .event-loc   { font-size: 0.68rem; color: var(--muted); margin-top: 2px; font-family: 'DM Mono', monospace; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
   /* ── FOOTER ── */
   .footer {
@@ -762,11 +767,11 @@ function renderCalendar(icalText) {
   const DAYS   = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
   const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
-  let html = '';
-  order.forEach((k, i) => {
+  // Build day group HTML strings
+  function buildDayHtml(k, i) {
     const { date, events: dayEvents } = groups[k];
     const isToday = sameDay(date, now);
-    html += `<div class="day-group" style="animation-delay:${i*0.05}s">
+    let h = `<div class="day-group" style="animation-delay:${i*0.05}s">
       <div class="day-label ${isToday ? 'is-today' : ''}">
         <span class="day-name">${DAYS[date.getDay()]}</span>
         <span class="day-date">${MONTHS[date.getMonth()]} ${date.getDate()}</span>
@@ -775,18 +780,31 @@ function renderCalendar(icalText) {
     for (const ev of dayEvents) {
       const allDay = isAllDay(ev.dtstart);
       const d = parseICalDate(ev.dtstart);
-      html += `<div class="event-row ${allDay ? 'all-day' : 'timed'}">
+      h += `<div class="event-row ${allDay ? 'all-day' : 'timed'}">
         <div class="event-time">${allDay ? 'All Day' : formatTime(d)}</div>
-        <div>
+        <div style="min-width:0;flex:1">
           <div class="event-title">${escHtml(ev.summary)}</div>
           ${ev.location ? `<div class="event-loc">📍 ${escHtml(ev.location)}</div>` : ''}
         </div>
       </div>`;
     }
-    html += '</div>';
+    h += '</div>';
+    return h;
+  }
+
+  // Split days across two columns — fill left first, then right
+  // Aim for roughly half the days in each column
+  const half = Math.ceil(order.length / 2);
+  let col1 = '', col2 = '';
+  order.forEach((k, i) => {
+    if (i < half) col1 += buildDayHtml(k, i);
+    else          col2 += buildDayHtml(k, i);
   });
 
-  body.innerHTML = html;
+  body.innerHTML = `
+    <div style="overflow:hidden;min-width:0;border-right:1px solid var(--border)">${col1}</div>
+    <div style="overflow:hidden;min-width:0">${col2}</div>`;
+
   document.getElementById('last-updated').textContent =
     'Last updated: ' + new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
 }
