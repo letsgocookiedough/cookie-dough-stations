@@ -7,23 +7,14 @@
 <link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Nunito:wght@700;800;900&family=DM+Mono:wght@500&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg:        #0f1318;
-    --surface:   #171c23;
-    --border:    #252d38;
-    --navy:      #1e2a3a;
-
-    --chip:    #c8943a;
-    --monster: #4a9e6a;
-    --smores:  #c0855a;
-    --brownie: #8b5e3c;
-    --gfchip:  #9a7abf;
-
+    --bg:      #0f1318;
+    --surface: #171c23;
+    --border:  #252d38;
     --text:    #f0ebe0;
     --muted:   #5a6478;
     --ok:      #4a9e6a;
     --warn:    #e8943a;
     --crit:    #e05050;
-
     --col-premix:  #7ab8d4;
     --col-freezer: #a8d4e8;
     --col-trailer: #e8a0b4;
@@ -32,12 +23,15 @@
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
+  html, body {
+    height: 100%;
+    overflow: hidden;
+  }
+
   body {
     font-family: 'Nunito', sans-serif;
     background: var(--bg);
     color: var(--text);
-    height: 100vh;
-    overflow: hidden;
     display: flex;
     flex-direction: column;
   }
@@ -47,332 +41,229 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0 28px;
-    height: 58px;
+    padding: 0 20px;
+    height: 46px;
     background: var(--surface);
     border-bottom: 2px solid var(--border);
     flex-shrink: 0;
   }
 
-  .header-left {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-  }
-
   .logo-text {
     font-family: 'Pacifico', cursive;
-    font-size: 1.4rem;
-    color: var(--chip);
-    text-shadow: 0 2px 8px rgba(200,148,58,0.3);
-  }
-
-  .page-label {
-    font-size: 0.7rem;
-    font-weight: 900;
-    letter-spacing: 0.18em;
-    text-transform: uppercase;
-    color: var(--muted);
-    font-family: 'DM Mono', monospace;
-    border-left: 2px solid var(--border);
-    padding-left: 14px;
-    margin-left: 4px;
+    font-size: 1.1rem;
+    color: #c8943a;
   }
 
   .header-right {
     display: flex;
     align-items: center;
-    gap: 20px;
+    gap: 10px;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.68rem;
+    color: var(--muted);
   }
 
   #status-dot {
-    width: 8px; height: 8px;
+    width: 7px; height: 7px;
     border-radius: 50%;
     background: var(--ok);
-    flex-shrink: 0;
   }
   #status-dot.loading { background: var(--warn); animation: blink 0.7s ease infinite; }
   #status-dot.error   { background: var(--crit); }
-
   @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
 
-  #last-refresh {
-    font-family: 'DM Mono', monospace;
-    font-size: 0.72rem;
-    color: var(--muted);
-    letter-spacing: 0.04em;
-  }
-
-  /* ── LOCATION HEADER ROW ── */
+  /* ── GRID ── */
   .grid-wrap {
     flex: 1;
     display: flex;
     flex-direction: column;
-    padding: 16px 20px 12px;
-    gap: 10px;
+    padding: 10px 14px 8px;
+    gap: 7px;
     overflow: hidden;
+    min-height: 0;
   }
 
   .col-headers {
     display: grid;
-    grid-template-columns: 180px repeat(4, 1fr);
-    gap: 8px;
-    padding: 0 4px;
+    grid-template-columns: 130px repeat(4, 1fr);
+    gap: 6px;
+    flex-shrink: 0;
   }
 
   .col-header {
     text-align: center;
     font-family: 'DM Mono', monospace;
-    font-size: 0.72rem;
+    font-size: 0.62rem;
     font-weight: 500;
-    letter-spacing: 0.14em;
+    letter-spacing: 0.12em;
     text-transform: uppercase;
-    padding: 6px 0;
-    border-radius: 6px;
-    border-bottom: 3px solid;
+    padding: 5px 0 4px;
+    border-radius: 5px;
+    border-bottom: 2px solid;
   }
-
   .col-header.premix  { color: var(--col-premix);  border-color: var(--col-premix);  background: rgba(122,184,212,0.06); }
   .col-header.freezer { color: var(--col-freezer); border-color: var(--col-freezer); background: rgba(168,212,232,0.06); }
   .col-header.trailer { color: var(--col-trailer); border-color: var(--col-trailer); background: rgba(232,160,180,0.06); }
   .col-header.van     { color: var(--col-van);     border-color: var(--col-van);     background: rgba(200,184,122,0.06); }
 
-  /* ── FLAVOR ROWS ── */
   .flavor-rows {
     display: flex;
     flex-direction: column;
-    gap: 8px;
-    flex: 1;
-  }
-
-  .flavor-row {
-    display: grid;
-    grid-template-columns: 180px repeat(4, 1fr);
-    gap: 8px;
-    animation: fadeUp 0.4s ease both;
+    gap: 6px;
     flex: 1;
     min-height: 0;
   }
 
-  .flavor-row:nth-child(1) { animation-delay: 0.04s; }
-  .flavor-row:nth-child(2) { animation-delay: 0.08s; }
-  .flavor-row:nth-child(3) { animation-delay: 0.12s; }
-  .flavor-row:nth-child(4) { animation-delay: 0.16s; }
-  .flavor-row:nth-child(5) { animation-delay: 0.20s; }
+  .flavor-row {
+    display: grid;
+    grid-template-columns: 130px repeat(4, 1fr);
+    gap: 6px;
+    flex: 1;
+    min-height: 0;
+    animation: fadeUp 0.35s ease both;
+  }
+  .flavor-row:nth-child(1){animation-delay:.03s}
+  .flavor-row:nth-child(2){animation-delay:.06s}
+  .flavor-row:nth-child(3){animation-delay:.09s}
+  .flavor-row:nth-child(4){animation-delay:.12s}
+  .flavor-row:nth-child(5){animation-delay:.15s}
 
   @keyframes fadeUp {
-    from { opacity: 0; transform: translateY(10px); }
-    to   { opacity: 1; transform: translateY(0); }
+    from { opacity:0; transform:translateY(8px); }
+    to   { opacity:1; transform:translateY(0); }
   }
 
-  /* Flavor label cell */
   .flavor-label {
     background: var(--surface);
     border: 2px solid var(--border);
-    border-radius: 12px;
+    border-radius: 10px;
     display: flex;
     align-items: center;
-    gap: 12px;
-    padding: 0 16px;
-    overflow: hidden;
-    position: relative;
+    gap: 10px;
+    padding: 0 12px;
   }
 
   .flavor-swatch {
-    width: 8px;
-    height: 60%;
+    width: 6px;
+    height: 55%;
     border-radius: 999px;
     flex-shrink: 0;
   }
 
   .flavor-name {
     font-family: 'Pacifico', cursive;
-    font-size: clamp(1rem, 1.8vw, 1.4rem);
-    color: var(--text);
+    font-size: clamp(0.85rem, 1.4vw, 1.15rem);
     white-space: nowrap;
   }
 
-  /* Stock count cell */
   .stock-cell {
-    border-radius: 12px;
+    border-radius: 10px;
     border: 2px solid var(--border);
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 4px;
-    transition: border-color 0.3s, background 0.3s;
+    gap: 2px;
     position: relative;
     overflow: hidden;
+    transition: border-color 0.3s, background 0.3s;
   }
 
   .stock-cell::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    opacity: 0.04;
-    pointer-events: none;
+    content:''; position:absolute; inset:0; opacity:0.04; pointer-events:none;
   }
-
   .stock-cell.premix::before  { background: var(--col-premix); }
   .stock-cell.freezer::before { background: var(--col-freezer); }
   .stock-cell.trailer::before { background: var(--col-trailer); }
   .stock-cell.van::before     { background: var(--col-van); }
 
-  .stock-cell.ok   { border-color: var(--border); }
   .stock-cell.warn { border-color: var(--warn); background: rgba(232,148,58,0.05); }
   .stock-cell.crit { border-color: var(--crit); background: rgba(224,80,80,0.07); animation: critPulse 2s ease infinite; }
-
   @keyframes critPulse {
-    0%,100% { background: rgba(224,80,80,0.07); }
-    50%     { background: rgba(224,80,80,0.15); }
+    0%,100%{ background:rgba(224,80,80,0.07); }
+    50%    { background:rgba(224,80,80,0.15); }
   }
 
   .stock-num {
     font-family: 'Nunito', sans-serif;
-    font-size: clamp(1.8rem, 3.5vw, 3.2rem);
+    font-size: clamp(1.4rem, 2.8vw, 2.6rem);
     font-weight: 900;
     line-height: 1;
-    color: var(--text);
     transition: color 0.3s;
   }
-
   .stock-cell.warn .stock-num { color: var(--warn); }
   .stock-cell.crit .stock-num { color: var(--crit); }
-  .stock-cell.empty .stock-num { color: var(--muted); font-size: clamp(1.4rem, 2.5vw, 2.2rem); }
+  .stock-cell.empty .stock-num { color: var(--muted); font-size: clamp(1rem,2vw,1.6rem); }
 
   .stock-status {
     font-family: 'DM Mono', monospace;
-    font-size: clamp(0.55rem, 0.9vw, 0.72rem);
+    font-size: clamp(0.48rem, 0.75vw, 0.62rem);
     font-weight: 500;
     letter-spacing: 0.1em;
     text-transform: uppercase;
-    opacity: 0.6;
+    opacity: 0.55;
+    min-height: 0.8em;
   }
-
   .stock-cell.warn .stock-status { color: var(--warn); opacity: 0.9; }
   .stock-cell.crit .stock-status { color: var(--crit); opacity: 0.9; }
 
-  .warn-icon {
-    font-size: clamp(0.9rem, 1.4vw, 1.2rem);
-    line-height: 1;
-  }
-
-  /* ── LOADING STATE ── */
-  .loading-overlay {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 14px;
-    background: var(--bg);
-    z-index: 10;
-    transition: opacity 0.4s;
-  }
-  .loading-overlay.hidden { opacity: 0; pointer-events: none; }
-
-  .spinner {
-    width: 36px; height: 36px;
-    border: 3px solid var(--border);
-    border-top-color: var(--chip);
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
-  }
-  @keyframes spin { to { transform: rotate(360deg); } }
-
-  .loading-text {
-    font-family: 'DM Mono', monospace;
-    font-size: 0.8rem;
-    color: var(--muted);
-    letter-spacing: 0.1em;
-  }
-
-  /* ── ERROR BANNER ── */
-  .error-banner {
-    display: none;
-    background: rgba(224,80,80,0.1);
-    border: 1px solid var(--crit);
-    border-radius: 8px;
-    padding: 10px 16px;
-    font-family: 'DM Mono', monospace;
-    font-size: 0.75rem;
-    color: var(--crit);
-    text-align: center;
-    margin: 0 4px;
-  }
-  .error-banner.visible { display: block; }
-
   /* ── FOOTER ── */
   .footer {
-    height: 30px;
+    height: 26px;
     background: var(--surface);
-    border-top: 2px solid var(--border);
+    border-top: 1px solid var(--border);
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0 20px;
+    padding: 0 16px;
     flex-shrink: 0;
   }
 
   .footer-stat {
     font-family: 'DM Mono', monospace;
-    font-size: 0.68rem;
+    font-size: 0.62rem;
     color: var(--muted);
-    letter-spacing: 0.06em;
+    letter-spacing: 0.05em;
   }
 
-  .legend {
-    display: flex;
-    gap: 18px;
-    align-items: center;
+  /* ── LOADING ── */
+  .loading-overlay {
+    position: fixed; inset: 0;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 12px;
+    background: var(--bg);
+    z-index: 10;
+    transition: opacity 0.4s;
   }
-
-  .legend-item {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    font-family: 'DM Mono', monospace;
-    font-size: 0.65rem;
-    color: var(--muted);
-    letter-spacing: 0.06em;
-  }
-
-  .legend-dot {
-    width: 7px; height: 7px;
+  .loading-overlay.hidden { opacity:0; pointer-events:none; }
+  .spinner {
+    width:30px; height:30px;
+    border: 3px solid var(--border);
+    border-top-color: #c8943a;
     border-radius: 50%;
+    animation: spin 0.8s linear infinite;
   }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  .loading-text { font-family:'DM Mono',monospace; font-size:0.75rem; color:var(--muted); }
 </style>
 </head>
 <body>
 
-<!-- LOADING OVERLAY -->
 <div class="loading-overlay" id="loading-overlay">
   <div class="spinner"></div>
   <div class="loading-text">Fetching stock levels...</div>
 </div>
 
-<!-- HEADER -->
 <div class="header">
-  <div class="header-left">
-    <div class="logo-text">Let's Go Cookie Dough</div>
-    <div class="page-label">Stock on Hand</div>
-  </div>
+  <div class="logo-text">Let's Go Cookie Dough</div>
   <div class="header-right">
     <div id="status-dot" class="loading"></div>
-    <div id="last-refresh">Refreshing...</div>
+    <span id="last-refresh">Refreshing...</span>
   </div>
 </div>
 
-<!-- MAIN GRID -->
 <div class="grid-wrap">
-
-  <div class="error-banner" id="error-banner">
-    Could not reach stock data — will retry automatically
-  </div>
-
-  <!-- Column headers -->
   <div class="col-headers">
     <div></div>
     <div class="col-header premix">🥣 Pre Mix</div>
@@ -380,200 +271,118 @@
     <div class="col-header trailer">🚚 Trailer</div>
     <div class="col-header van">🚐 Van</div>
   </div>
-
-  <!-- Flavor rows -->
-  <div class="flavor-rows" id="flavor-rows">
-    <!-- built by JS -->
-  </div>
-
+  <div class="flavor-rows" id="flavor-rows"></div>
 </div>
 
-<!-- FOOTER -->
 <div class="footer">
   <div class="footer-stat" id="footer-total">—</div>
-  <div class="legend">
-    <div class="legend-item"><div class="legend-dot" style="background:var(--ok)"></div>OK</div>
-    <div class="legend-item"><div class="legend-dot" style="background:var(--warn)"></div>LOW</div>
-    <div class="legend-item"><div class="legend-dot" style="background:var(--crit)"></div>CRITICAL</div>
-  </div>
   <div class="footer-stat" id="footer-next">Next refresh: —</div>
 </div>
 
 <script>
-// ── CONFIG ───────────────────────────────────────────────────────────────────
 const GETSTOCK_WEBHOOK = 'https://default1ebf792d925a4261a8639b048282d6.65.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/f72109894f834a15a5ac92fab5f1753d/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=n7oh-5gU3zVSmRjyKFrkM0rKvm-5lZSTGK7SvwZTgyA';
-
-const REFRESH_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes — adjust as needed
+const REFRESH_MS = 5 * 60 * 1000;
 
 const FLAVORS = [
-  { name: 'Chip',    color: '#c8943a' },
-  { name: 'Monster', color: '#4a9e6a' },
-  { name: 'Smores',  color: '#c0855a' },
-  { name: 'Brownie', color: '#8b5e3c' },
-  { name: 'GF Chip', color: '#9a7abf' },
+  { name:'Chip',    color:'#c8943a' },
+  { name:'Monster', color:'#4a9e6a' },
+  { name:'Smores',  color:'#c0855a' },
+  { name:'Brownie', color:'#8b5e3c' },
+  { name:'GF Chip', color:'#9a7abf' },
 ];
-
-const LOCATIONS = ['premix', 'freezer', 'trailer', 'van'];
-
+const LOCS = ['premix','freezer','trailer','van'];
 const THRESHOLDS = {
-  'Chip':    { premix: 10, freezer: 10 },
-  'Monster': { premix: 10, freezer: 10 },
-  'Smores':  { premix: 10, freezer: 5  },
-  'Brownie': { premix: 10, freezer: 5  },
-  'GF Chip': { premix: 10, freezer: 3  },
+  'Chip':    {premix:10, freezer:10},
+  'Monster': {premix:10, freezer:10},
+  'Smores':  {premix:10, freezer:5},
+  'Brownie': {premix:10, freezer:5},
+  'GF Chip': {premix:10, freezer:3},
 };
 
-// ── BUILD SKELETON ────────────────────────────────────────────────────────────
 function buildGrid() {
-  const container = document.getElementById('flavor-rows');
-  container.innerHTML = '';
-
+  const c = document.getElementById('flavor-rows');
   FLAVORS.forEach(f => {
     const row = document.createElement('div');
     row.className = 'flavor-row';
-    row.id = `row-${f.name}`;
-
-    // Flavor label
-    row.innerHTML = `
-      <div class="flavor-label">
-        <div class="flavor-swatch" style="background:${f.color}"></div>
-        <div class="flavor-name">${f.name}</div>
-      </div>`;
-
-    // Stock cells
-    LOCATIONS.forEach(loc => {
+    row.innerHTML = `<div class="flavor-label">
+      <div class="flavor-swatch" style="background:${f.color}"></div>
+      <div class="flavor-name">${f.name}</div>
+    </div>`;
+    LOCS.forEach(loc => {
       const cell = document.createElement('div');
-      cell.className = `stock-cell ${loc} ok`;
+      cell.className = `stock-cell ${loc}`;
       cell.id = `cell-${f.name}-${loc}`;
-      cell.innerHTML = `
-        <div class="stock-num" id="num-${f.name}-${loc}">—</div>
-        <div class="stock-status" id="status-${f.name}-${loc}"></div>`;
+      cell.innerHTML = `<div class="stock-num" id="num-${f.name}-${loc}">—</div>
+        <div class="stock-status" id="st-${f.name}-${loc}"></div>`;
       row.appendChild(cell);
     });
-
-    container.appendChild(row);
+    c.appendChild(row);
   });
 }
 
-// ── FETCH & RENDER ────────────────────────────────────────────────────────────
 async function fetchAndRender() {
-  const dot    = document.getElementById('status-dot');
-  const label  = document.getElementById('last-refresh');
-  const errBan = document.getElementById('error-banner');
-
+  const dot = document.getElementById('status-dot');
   dot.className = 'loading';
-  label.textContent = 'Refreshing...';
-
   try {
     const resp = await fetch(GETSTOCK_WEBHOOK, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ mode: 'all' })
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({mode:'all'})
     });
-
     if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-
     const data = await resp.json();
     renderData(data);
-
     dot.className = '';
-    const now = new Date();
-    label.textContent = 'Updated ' + now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-    errBan.classList.remove('visible');
+    document.getElementById('last-refresh').textContent =
+      'Updated ' + new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
     document.getElementById('loading-overlay').classList.add('hidden');
-
-  } catch (e) {
+  } catch(e) {
     dot.className = 'error';
-    label.textContent = 'Error — retrying soon';
-    errBan.classList.add('visible');
-    // Don't hide the loading overlay if we've never loaded successfully
-    if (document.getElementById('loading-overlay').classList.contains('hidden')) {
-      // already loaded once, keep showing stale data
-    }
+    document.getElementById('last-refresh').textContent = 'Error — retrying';
   }
 }
 
 function renderData(data) {
-  let grandTotal = 0;
-  let warnCount = 0, critCount = 0;
-
+  let total=0, warns=0, crits=0;
   FLAVORS.forEach(f => {
-    const flavorData = data[f.name] || {};
-
-    LOCATIONS.forEach(loc => {
-      const cell   = document.getElementById(`cell-${f.name}-${loc}`);
-      const numEl  = document.getElementById(`num-${f.name}-${loc}`);
-      const statEl = document.getElementById(`status-${f.name}-${loc}`);
-
-      const val       = flavorData[loc];
-      const threshold = THRESHOLDS[f.name]?.[loc];
-      const isNum     = typeof val === 'number';
-
-      if (!isNum) {
-        cell.className  = `stock-cell ${loc} empty`;
-        numEl.textContent  = '—';
-        statEl.textContent = '';
-        return;
+    const d = data[f.name] || {};
+    LOCS.forEach(loc => {
+      const cell  = document.getElementById(`cell-${f.name}-${loc}`);
+      const numEl = document.getElementById(`num-${f.name}-${loc}`);
+      const stEl  = document.getElementById(`st-${f.name}-${loc}`);
+      const val = d[loc];
+      const thr = THRESHOLDS[f.name]?.[loc];
+      if (typeof val !== 'number') {
+        cell.className = `stock-cell ${loc} empty`;
+        numEl.textContent = '—'; stEl.textContent = ''; return;
       }
-
-      grandTotal += val;
-
-      let level = 'ok';
-      let statusText = '';
-      let icon = '';
-
-      if (threshold != null) {
-        if (val <= Math.floor(threshold / 2)) {
-          level = 'crit';
-          statusText = 'critical';
-          icon = '🚨 ';
-          critCount++;
-        } else if (val < threshold) {
-          level = 'warn';
-          statusText = 'low';
-          icon = '⚠️ ';
-          warnCount++;
-        } else {
-          statusText = 'ok';
-        }
+      total += val;
+      let level='ok', label='';
+      if (thr != null) {
+        if (val <= Math.floor(thr/2)) { level='crit'; label='⚠ critical'; crits++; }
+        else if (val < thr)           { level='warn'; label='↓ low';      warns++; }
       }
-
-      cell.className     = `stock-cell ${loc} ${level}`;
-      numEl.textContent  = val;
-      statEl.innerHTML   = icon ? `<span class="warn-icon">${icon}</span>${statusText}` : statusText;
+      cell.className    = `stock-cell ${loc} ${level}`;
+      numEl.textContent = val;
+      stEl.textContent  = label;
     });
   });
-
-  // Footer summary
-  const alerts = critCount > 0
-    ? `🚨 ${critCount} critical · ⚠️ ${warnCount} low`
-    : warnCount > 0
-    ? `⚠️ ${warnCount} flavors low`
-    : '✓ All stock levels OK';
-
-  document.getElementById('footer-total').textContent = `Total units on hand: ${grandTotal} · ${alerts}`;
+  const note = crits>0 ? `🚨 ${crits} critical · ⚠ ${warns} low`
+             : warns>0 ? `⚠ ${warns} low`
+             : '✓ All OK';
+  document.getElementById('footer-total').textContent = `Total: ${total} units · ${note}`;
 }
 
-// ── COUNTDOWN TIMER ────────────────────────────────────────────────────────────
-let secondsLeft = REFRESH_INTERVAL_MS / 1000;
-
-function tickCountdown() {
-  secondsLeft--;
-  const m = Math.floor(secondsLeft / 60);
-  const s = secondsLeft % 60;
+let secs = REFRESH_MS / 1000;
+setInterval(() => {
+  secs--;
+  const m = Math.floor(secs/60), s = secs%60;
   document.getElementById('footer-next').textContent =
-    `Next refresh: ${m}m ${String(s).padStart(2,'0')}s`;
+    `Refresh in ${m}m ${String(s).padStart(2,'0')}s`;
+  if (secs <= 0) { secs = REFRESH_MS/1000; fetchAndRender(); }
+}, 1000);
 
-  if (secondsLeft <= 0) {
-    secondsLeft = REFRESH_INTERVAL_MS / 1000;
-    fetchAndRender();
-  }
-}
-
-// ── INIT ───────────────────────────────────────────────────────────────────────
 buildGrid();
 fetchAndRender();
-setInterval(tickCountdown, 1000);
 </script>
 </body>
 </html>
