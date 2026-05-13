@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cookie Dough HQ</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:         #0e0e0f;
+    --panel:      #161618;
+    --border:     #2a2a2e;
+    --accent:     #f5c842;
+    --accent2:    #e8834a;
+    --text:       #f0ede6;
+    --muted:      #7a7a82;
+    --today-bg:   rgba(245,200,66,0.08);
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── TOP BAR ── */
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 32px;
+    height: 64px;
+    background: var(--panel);
+    border-bottom: 2px solid var(--border);
+    flex-shrink: 0;
+  }
+
+  .brand {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 2rem;
+    letter-spacing: 0.12em;
+    color: var(--accent);
+  }
+  .brand span { color: var(--accent2); }
+
+  .topbar-right {
+    display: flex;
+    align-items: center;
+    gap: 28px;
+  }
+
+  #clock {
+    font-family: 'DM Mono', monospace;
+    font-size: 1.6rem;
+    letter-spacing: 0.05em;
+  }
+  #dateline {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.85rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+
+  .refresh-badge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.75rem;
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+  }
+
+  .pulse-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--accent);
+    animation: pulse 2s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%,100%{ opacity:1; transform:scale(1); }
+    50%    { opacity:0.4; transform:scale(0.7); }
+  }
+
+  .gear-btn {
+    background: none; border: none; cursor: pointer;
+    color: var(--muted); font-size: 1.1rem;
+    padding: 4px 8px; border-radius: 4px;
+    transition: color 0.15s;
+  }
+  .gear-btn:hover { color: var(--accent); }
+
+  /* ── MAIN SPLIT ── */
+  .main {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  .panel {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border-right: 2px solid var(--border);
+  }
+  .panel:last-child { border-right: none; }
+
+  .panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 24px;
+    background: var(--panel);
+    border-bottom: 2px solid var(--border);
+    flex-shrink: 0;
+  }
+
+  .panel-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.25rem;
+    letter-spacing: 0.15em;
+    color: var(--muted);
+  }
+
+  .panel-subtitle {
+    font-size: 0.75rem;
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+    opacity: 0.7;
+  }
+
+  /* ── STOCK PANEL ── */
+  #stock-frame {
+    width: 100%; flex: 1; border: none; background: var(--bg);
+  }
+
+  .stock-placeholder {
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 16px; color: var(--muted);
+  }
+  .stock-placeholder .icon { font-size: 3rem; opacity: 0.3; }
+  .stock-placeholder p {
+    font-size: 0.9rem; font-family: 'DM Mono', monospace;
+    opacity: 0.6; text-align: center; max-width: 280px; line-height: 1.6;
+  }
+  .config-hint {
+    margin-top: 8px; padding: 10px 18px;
+    border: 1px solid var(--border); border-radius: 4px;
+    font-size: 0.75rem; font-family: 'DM Mono', monospace;
+    color: var(--accent); background: rgba(245,200,66,0.05);
+  }
+
+  /* ── CALENDAR PANEL ── */
+  .calendar-body {
+    flex: 1; overflow-y: auto; padding: 0;
+    scrollbar-width: thin; scrollbar-color: var(--border) transparent;
+  }
+
+  .cal-status {
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    height: 100%; gap: 12px;
+    color: var(--muted);
+    font-family: 'DM Mono', monospace; font-size: 0.85rem;
+    text-align: center; padding: 20px;
+    line-height: 1.6;
+  }
+  .cal-status .spinner {
+    width:28px; height:28px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform:rotate(360deg); } }
+
+  .day-group {
+    border-bottom: 1px solid var(--border);
+    animation: fadeUp 0.4s ease both;
+  }
+  @keyframes fadeUp {
+    from { opacity:0; transform:translateY(8px); }
+    to   { opacity:1; transform:translateY(0); }
+  }
+
+  .day-label {
+    display: flex; align-items: baseline; gap: 10px;
+    padding: 12px 24px 8px;
+    position: sticky; top: 0;
+    background: var(--bg); z-index: 2;
+    border-bottom: 1px solid var(--border);
+  }
+  .day-label.is-today { background: var(--today-bg); }
+
+  .day-name {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.4rem; letter-spacing: 0.1em;
+  }
+  .day-label.is-today .day-name { color: var(--accent); }
+
+  .day-date {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.8rem; color: var(--muted);
+  }
+
+  .today-tag {
+    font-size: 0.65rem; font-family: 'DM Mono', monospace;
+    background: var(--accent); color: #000;
+    padding: 2px 7px; border-radius: 2px;
+    letter-spacing: 0.08em; font-weight: 700;
+    text-transform: uppercase;
+  }
+
+  .event-row {
+    display: flex; align-items: flex-start;
+    gap: 16px; padding: 11px 24px;
+    border-left: 3px solid transparent;
+    transition: background 0.15s;
+  }
+  .event-row:hover { background: rgba(255,255,255,0.03); }
+  .event-row.all-day { border-left-color: var(--accent2); }
+  .event-row.timed   { border-left-color: var(--accent); }
+
+  .event-time {
+    font-family: 'DM Mono', monospace; font-size: 0.85rem;
+    color: var(--muted); min-width: 80px; padding-top: 2px; flex-shrink: 0;
+  }
+  .event-row.all-day .event-time {
+    color: var(--accent2); font-size: 0.75rem;
+    text-transform: uppercase; letter-spacing: 0.08em;
+  }
+
+  .event-title { font-size: 1rem; font-weight: 500; line-height: 1.4; flex: 1; }
+  .event-loc   { font-size: 0.75rem; color: var(--muted); margin-top: 3px; font-family: 'DM Mono', monospace; }
+
+  /* ── FOOTER ── */
+  .footer {
+    height: 32px; background: var(--panel);
+    border-top: 2px solid var(--border);
+    display: flex; align-items: center;
+    justify-content: space-between; padding: 0 24px; flex-shrink: 0;
+  }
+  .footer-left {
+    font-family: 'DM Mono', monospace; font-size: 0.7rem;
+    color: var(--muted); letter-spacing: 0.06em;
+  }
+  #countdown {
+    font-family: 'DM Mono', monospace; font-size: 0.7rem; color: var(--muted);
+  }
+  #countdown span { color: var(--accent); }
+
+  /* ── CONFIG OVERLAY ── */
+  #config-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.85); z-index: 100;
+    align-items: center; justify-content: center;
+  }
+  #config-overlay.visible { display: flex; }
+
+  .config-box {
+    background: var(--panel); border: 2px solid var(--border);
+    border-radius: 8px; padding: 36px 40px;
+    width: 580px; max-width: 90vw;
+    max-height: 90vh; overflow-y: auto;
+  }
+
+  .config-box h2 {
+    font-family: 'Bebas Neue', sans-serif; font-size: 1.8rem;
+    letter-spacing: 0.12em; color: var(--accent); margin-bottom: 6px;
+  }
+  .config-box p {
+    font-size: 0.85rem; color: var(--muted);
+    margin-bottom: 24px; line-height: 1.5;
+  }
+
+  .config-field { margin-bottom: 18px; }
+  .config-field label {
+    display: block; font-family: 'DM Mono', monospace;
+    font-size: 0.75rem; text-transform: uppercase;
+    letter-spacing: 0.1em; color: var(--muted); margin-bottom: 6px;
+  }
+  .config-field input, .config-field select {
+    width: 100%; background: var(--bg);
+    border: 1px solid var(--border); border-radius: 4px;
+    padding: 10px 14px; color: var(--text);
+    font-family: 'DM Mono', monospace; font-size: 0.85rem;
+    outline: none; transition: border-color 0.15s;
+  }
+  .config-field input:focus, .config-field select:focus { border-color: var(--accent); }
+  .config-field select option { background: var(--panel); }
+
+  .hint {
+    font-size: 0.72rem; color: var(--muted); margin-top: 5px;
+    font-family: 'DM Mono', monospace; line-height: 1.6;
+  }
+
+  .hint a { color: var(--accent); text-decoration: none; }
+  .hint a:hover { text-decoration: underline; }
+
+  .hint-box {
+    background: rgba(245,200,66,0.06); border: 1px solid rgba(245,200,66,0.2);
+    border-radius: 4px; padding: 10px 14px; margin-top: 8px;
+  }
+  .hint-box .step {
+    font-size: 0.72rem; font-family: 'DM Mono', monospace;
+    color: var(--muted); line-height: 2;
+  }
+  .hint-box .step b { color: var(--accent); }
+
+  .config-section-title {
+    font-family: 'Bebas Neue', sans-serif; font-size: 1rem;
+    letter-spacing: 0.15em; color: var(--muted);
+    border-top: 1px solid var(--border);
+    padding-top: 18px; margin: 18px 0 14px;
+  }
+
+  .config-actions {
+    display: flex; gap: 12px; margin-top: 24px;
+  }
+  .btn {
+    padding: 10px 22px; border-radius: 4px; border: none;
+    cursor: pointer; font-family: 'DM Mono', monospace;
+    font-size: 0.85rem; font-weight: 500;
+    letter-spacing: 0.05em; transition: opacity 0.15s;
+  }
+  .btn:hover { opacity: 0.85; }
+  .btn-primary { background: var(--accent); color: #000; }
+  .btn-ghost   { background: transparent; color: var(--muted); border: 1px solid var(--border); }
+</style>
+</head>
+<body>
+
+<!-- CONFIG OVERLAY -->
+<div id="config-overlay">
+  <div class="config-box">
+    <h2>Dashboard Setup</h2>
+    <p>These settings are saved in your browser. You only need to set them once.</p>
+
+    <div class="config-section-title">Stock Panel</div>
+
+    <div class="config-field">
+      <label>Stock Display URL (GitHub Pages)</label>
+      <input type="text" id="cfg-stock-url" placeholder="https://yourusername.github.io/your-repo/stock-display.html" />
+    </div>
+
+    <div class="config-section-title">Calendar Panel</div>
+
+    <div class="config-field">
+      <label>Calendar Source</label>
+      <select id="cfg-cal-type">
+        <option value="gas">Google Apps Script proxy (recommended for Outlook)</option>
+        <option value="ical">Direct iCal URL (may not work with Outlook)</option>
+      </select>
+    </div>
+
+    <div id="gas-fields">
+      <div class="config-field">
+        <label>Google Apps Script Web App URL</label>
+        <input type="text" id="cfg-gas-url" placeholder="https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec" />
+      </div>
+      <div class="hint-box">
+        <div class="step">One-time setup (takes ~5 min):</div>
+        <div class="step"><b>1.</b> Go to <a href="https://script.google.com" target="_blank">script.google.com</a> → New project</div>
+        <div class="step"><b>2.</b> Paste the Apps Script code (see dashboard-calendar-proxy.gs file)</div>
+        <div class="step"><b>3.</b> Replace YOUR_ICAL_URL_HERE with your Outlook ICS link</div>
+        <div class="step"><b>4.</b> Deploy → New deployment → Web app → Anyone can access → Deploy</div>
+        <div class="step"><b>5.</b> Copy the web app URL and paste it above</div>
+      </div>
+    </div>
+
+    <div id="ical-fields" style="display:none">
+      <div class="config-field">
+        <label>iCal Feed URL</label>
+        <input type="text" id="cfg-ical-url" placeholder="https://outlook.office365.com/owa/calendar/..." />
+        <div class="hint">Note: Outlook blocks direct browser fetches. Use the Apps Script option above instead.</div>
+      </div>
+    </div>
+
+    <div class="config-section-title">General</div>
+
+    <div class="config-field">
+      <label>Auto-Refresh Interval (minutes)</label>
+      <input type="number" id="cfg-refresh" value="10" min="1" max="60" />
+    </div>
+
+    <div class="config-actions">
+      <button class="btn btn-primary" onclick="saveConfig()">Save &amp; Launch</button>
+      <button class="btn btn-ghost" onclick="closeConfig()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <div class="brand">Cookie Dough <span>HQ</span></div>
+  <div class="topbar-right">
+    <div>
+      <div id="clock">--:--:--</div>
+      <div id="dateline">Loading...</div>
+    </div>
+    <div class="refresh-badge">
+      <div class="pulse-dot"></div>
+      <span id="countdown">Next refresh in <span id="countdown-val">--</span></span>
+    </div>
+    <button class="gear-btn" onclick="openConfig()" title="Settings">⚙</button>
+  </div>
+</div>
+
+<!-- SPLIT PANELS -->
+<div class="main">
+
+  <!-- LEFT: STOCK -->
+  <div class="panel">
+    <div class="panel-header">
+      <div class="panel-title">Stock on Hand</div>
+      <div class="panel-subtitle" id="stock-url-display">—</div>
+    </div>
+    <div id="stock-content" style="flex:1;display:flex;flex-direction:column;overflow:hidden;"></div>
+  </div>
+
+  <!-- RIGHT: CALENDAR -->
+  <div class="panel">
+    <div class="panel-header">
+      <div class="panel-title">Upcoming Events</div>
+      <div class="panel-subtitle">Next 3 weeks</div>
+    </div>
+    <div class="calendar-body" id="cal-body">
+      <div class="cal-status"><div class="spinner"></div><span>Loading calendar...</span></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- FOOTER -->
+<div class="footer">
+  <div class="footer-left">COOKIE DOUGH HQ · AUTO-REFRESH ENABLED</div>
+  <div id="last-updated">Last updated: —</div>
+</div>
+
+<script>
+// ── CONFIG ───────────────────────────────────────────────────────────────────
+function loadConfig() {
+  try { return JSON.parse(localStorage.getItem('hq_config2')) || {}; }
+  catch { return {}; }
+}
+
+function saveConfig() {
+  const cfg = {
+    stockUrl:   document.getElementById('cfg-stock-url').value.trim(),
+    calType:    document.getElementById('cfg-cal-type').value,
+    gasUrl:     document.getElementById('cfg-gas-url').value.trim(),
+    icalUrl:    document.getElementById('cfg-ical-url').value.trim(),
+    refreshMin: parseInt(document.getElementById('cfg-refresh').value) || 10,
+  };
+  localStorage.setItem('hq_config2', JSON.stringify(cfg));
+  closeConfig();
+  initDashboard();
+}
+
+function openConfig() {
+  const cfg = loadConfig();
+  document.getElementById('cfg-stock-url').value = cfg.stockUrl || '';
+  document.getElementById('cfg-cal-type').value  = cfg.calType  || 'gas';
+  document.getElementById('cfg-gas-url').value   = cfg.gasUrl   || '';
+  document.getElementById('cfg-ical-url').value  = cfg.icalUrl  || '';
+  document.getElementById('cfg-refresh').value   = cfg.refreshMin || 10;
+  toggleCalFields();
+  document.getElementById('config-overlay').classList.add('visible');
+}
+
+function closeConfig() {
+  document.getElementById('config-overlay').classList.remove('visible');
+}
+
+function toggleCalFields() {
+  const t = document.getElementById('cfg-cal-type').value;
+  document.getElementById('gas-fields').style.display   = t === 'gas'   ? 'block' : 'none';
+  document.getElementById('ical-fields').style.display  = t === 'ical'  ? 'block' : 'none';
+}
+document.getElementById('cfg-cal-type').addEventListener('change', toggleCalFields);
+
+// ── CLOCK ─────────────────────────────────────────────────────────────────────
+function updateClock() {
+  const now = new Date();
+  const days   = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  document.getElementById('clock').textContent =
+    now.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  document.getElementById('dateline').textContent =
+    `${days[now.getDay()]} · ${months[now.getMonth()]} ${now.getDate()}, ${now.getFullYear()}`;
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// ── REFRESH COUNTDOWN ─────────────────────────────────────────────────────────
+let refreshTimer = null, refreshSecondsLeft = 0;
+
+function startRefreshTimer(minutes) {
+  if (refreshTimer) clearInterval(refreshTimer);
+  refreshSecondsLeft = minutes * 60;
+  refreshTimer = setInterval(() => {
+    refreshSecondsLeft--;
+    const m = Math.floor(refreshSecondsLeft / 60);
+    const s = refreshSecondsLeft % 60;
+    document.getElementById('countdown-val').textContent =
+      m > 0 ? `${m}m ${String(s).padStart(2,'0')}s` : `${s}s`;
+    if (refreshSecondsLeft <= 0) location.reload();
+  }, 1000);
+}
+
+// ── STOCK PANEL ───────────────────────────────────────────────────────────────
+function renderStock(url) {
+  const container = document.getElementById('stock-content');
+  const display   = document.getElementById('stock-url-display');
+  if (!url) {
+    display.textContent = 'Not configured';
+    container.innerHTML = `<div class="stock-placeholder">
+      <div class="icon">📦</div>
+      <p>Stock display will appear here once configured.</p>
+      <div class="config-hint">Click ⚙ to add your GitHub Pages URL</div>
+    </div>`;
+    return;
+  }
+  display.textContent = url.replace(/^https?:\/\//,'').replace(/\/$/,'');
+  container.innerHTML = `<iframe id="stock-frame" src="${url}" allowfullscreen></iframe>`;
+}
+
+// ── ICAL PARSER ───────────────────────────────────────────────────────────────
+function parseICal(text) {
+  const events = [];
+  const blocks = text.split('BEGIN:VEVENT');
+  blocks.shift();
+  for (const block of blocks) {
+    const get = key => {
+      const m = block.match(new RegExp(`${key}[^:]*:([^\\r\\n]+)`, 'i'));
+      return m ? m[1].trim() : '';
+    };
+    const summary  = get('SUMMARY').replace(/\\,/g,',').replace(/\\n/g,' ');
+    const location = get('LOCATION').replace(/\\,/g,',');
+    const dtstart  = get('DTSTART');
+    if (!summary || !dtstart) continue;
+    events.push({ summary, location, dtstart });
+  }
+  return events;
+}
+
+function parseICalDate(str) {
+  if (!str) return null;
+  const c = str.replace(/[TZ]/g,'').replace(/[-:]/g,'');
+  if (c.length === 8)
+    return new Date(+c.slice(0,4), +c.slice(4,6)-1, +c.slice(6,8));
+  return new Date(+c.slice(0,4), +c.slice(4,6)-1, +c.slice(6,8), +c.slice(8,10), +c.slice(10,12));
+}
+
+function isAllDay(dtstart) { return dtstart.length === 8 || !dtstart.includes('T'); }
+function dayKey(d) { return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`; }
+function sameDay(a,b) {
+  return a.getFullYear()===b.getFullYear() && a.getMonth()===b.getMonth() && a.getDate()===b.getDate();
+}
+function formatTime(d) {
+  return d.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',hour12:true});
+}
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── CALENDAR LOADER ───────────────────────────────────────────────────────────
+async function loadCalendar(cfg) {
+  const body = document.getElementById('cal-body');
+  const calType = cfg.calType || 'gas';
+  const url = calType === 'gas' ? cfg.gasUrl : cfg.icalUrl;
+
+  if (!url) {
+    body.innerHTML = `<div class="cal-status">
+      📅 No calendar configured.<br>Click ⚙ to set up your Outlook calendar.
+    </div>`;
+    return;
+  }
+
+  body.innerHTML = `<div class="cal-status"><div class="spinner"></div><span>Loading calendar…</span></div>`;
+
+  try {
+    let icalText;
+
+    if (calType === 'gas') {
+      // Google Apps Script proxy returns the iCal text directly
+      const resp = await fetch(url, { cache: 'no-store' });
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      icalText = await resp.text();
+    } else {
+      // Direct iCal — try without proxy first, fall back to corsproxy
+      try {
+        const resp = await fetch(url, { cache: 'no-store' });
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        icalText = await resp.text();
+      } catch {
+        const proxy = 'https://corsproxy.io/?' + encodeURIComponent(url);
+        const resp2 = await fetch(proxy, { cache: 'no-store' });
+        if (!resp2.ok) throw new Error(`HTTP ${resp2.status} via proxy`);
+        icalText = await resp2.text();
+      }
+    }
+
+    renderCalendar(icalText);
+
+  } catch (err) {
+    body.innerHTML = `<div class="cal-status">
+      ⚠ Could not load calendar<br>
+      <small style="opacity:.6;font-size:.8em">${err.message}</small><br><br>
+      <small style="opacity:.5;font-size:.75em">
+        ${calType === 'ical'
+          ? 'Outlook blocks direct browser fetches. Switch to the Google Apps Script proxy method in ⚙ settings.'
+          : 'Make sure the Apps Script is deployed with "Anyone can access" permissions.'}
+      </small>
+    </div>`;
+  }
+}
+
+function renderCalendar(icalText) {
+  const body   = document.getElementById('cal-body');
+  const events = parseICal(icalText);
+  const now    = new Date();
+  const end    = new Date(now); end.setDate(end.getDate() + 21);
+  const today  = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+  const filtered = events
+    .filter(e => { const d = parseICalDate(e.dtstart); return d && d >= today && d <= end; })
+    .sort((a,b) => parseICalDate(a.dtstart) - parseICalDate(b.dtstart));
+
+  if (!filtered.length) {
+    body.innerHTML = `<div class="cal-status">🎉 No events in the next 3 weeks.</div>`;
+    return;
+  }
+
+  const groups = {}, order = [];
+  for (const ev of filtered) {
+    const d = parseICalDate(ev.dtstart), k = dayKey(d);
+    if (!groups[k]) { groups[k] = { date:d, events:[] }; order.push(k); }
+    groups[k].events.push(ev);
+  }
+
+  const DAYS   = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+  let html = '';
+  order.forEach((k, i) => {
+    const { date, events: dayEvents } = groups[k];
+    const isToday = sameDay(date, now);
+    html += `<div class="day-group" style="animation-delay:${i*0.05}s">
+      <div class="day-label ${isToday ? 'is-today' : ''}">
+        <span class="day-name">${DAYS[date.getDay()]}</span>
+        <span class="day-date">${MONTHS[date.getMonth()]} ${date.getDate()}</span>
+        ${isToday ? '<span class="today-tag">Today</span>' : ''}
+      </div>`;
+    for (const ev of dayEvents) {
+      const allDay = isAllDay(ev.dtstart);
+      const d = parseICalDate(ev.dtstart);
+      html += `<div class="event-row ${allDay ? 'all-day' : 'timed'}">
+        <div class="event-time">${allDay ? 'All Day' : formatTime(d)}</div>
+        <div>
+          <div class="event-title">${escHtml(ev.summary)}</div>
+          ${ev.location ? `<div class="event-loc">📍 ${escHtml(ev.location)}</div>` : ''}
+        </div>
+      </div>`;
+    }
+    html += '</div>';
+  });
+
+  body.innerHTML = html;
+  document.getElementById('last-updated').textContent =
+    'Last updated: ' + new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+function initDashboard() {
+  const cfg = loadConfig();
+  renderStock(cfg.stockUrl);
+  loadCalendar(cfg);
+  startRefreshTimer(cfg.refreshMin || 10);
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+  const cfg = loadConfig();
+  if (!cfg.stockUrl && !cfg.gasUrl && !cfg.icalUrl) openConfig();
+  else initDashboard();
+});
+</script>
+</body>
+</html>
