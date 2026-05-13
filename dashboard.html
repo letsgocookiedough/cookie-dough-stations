@@ -4,97 +4,156 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Cookie Dough HQ</title>
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg:         #0e0e0f;
-    --panel:      #161618;
-    --border:     #2a2a2e;
-    --accent:     #f5c842;
-    --accent2:    #e8834a;
-    --text:       #f0ede6;
-    --muted:      #7a7a82;
-    --today-bg:   rgba(245,200,66,0.08);
+    --slate:       #4a5568;
+    --slate-dark:  #363d4a;
+    --slate-light: #5d6b82;
+    --blue:        #7ab8d4;
+    --blue-light:  #a8d4e8;
+    --blue-dark:   #5a9ab8;
+    --cream:       #f5ead6;
+    --cream-dark:  #e8d5b8;
+    --navy:        #1e2a3a;
+    --navy-light:  #253447;
+    --pink:        #e8a0b4;
+    --gold:        #c8943a;
+    --text:        #1e2a3a;
+    --text-light:  #f5ead6;
+    --warn-bg:     #fff3cd;
+    --warn-border: #e8943a;
+    --warn-text:   #7a4a10;
+    --danger-bg:   #fde8e8;
+    --danger-border: #e05050;
+    --danger-text: #7a1010;
+    --success:     #4a9e6a;
+    --border:      rgba(122,184,212,0.2);
   }
 
-  * { margin:0; padding:0; box-sizing:border-box; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
 
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'DM Sans', sans-serif;
+  html, body {
     height: 100vh;
     overflow: hidden;
+  }
+
+  body {
+    font-family: 'Nunito', sans-serif;
+    background: var(--slate-dark);
+    color: var(--text-light);
     display: flex;
     flex-direction: column;
+    position: relative;
+  }
+
+  /* ── SPRINKLES ── */
+  .sprinkles-bg {
+    position: fixed; inset: 0;
+    pointer-events: none; z-index: 0; overflow: hidden;
+  }
+  .sprinkle {
+    position: absolute; border-radius: 999px; opacity: 0.10;
   }
 
   /* ── TOP BAR ── */
   .topbar {
-    display: flex;
-    align-items: center;
+    position: relative; z-index: 2;
+    display: flex; align-items: center;
     justify-content: space-between;
-    padding: 0 32px;
-    height: 64px;
-    background: var(--panel);
-    border-bottom: 2px solid var(--border);
+    padding: 0 28px;
+    height: 62px;
+    background: var(--navy);
+    border-bottom: 3px solid var(--blue);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
     flex-shrink: 0;
   }
 
   .brand {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 2rem;
-    letter-spacing: 0.12em;
-    color: var(--accent);
+    display: flex; align-items: center; gap: 14px;
   }
-  .brand span { color: var(--accent2); }
+
+  .brand-logo {
+    height: 44px; width: auto;
+    filter: drop-shadow(0 2px 6px rgba(0,0,0,0.4));
+  }
+
+  .brand-fallback {
+    font-family: 'Pacifico', cursive;
+    font-size: 1.5rem;
+    color: var(--cream);
+    text-shadow: 2px 2px 0 var(--slate-dark);
+  }
+  .brand-fallback span { color: var(--gold); }
+
+  .brand-divider {
+    width: 2px; height: 30px;
+    background: var(--blue);
+    opacity: 0.4;
+    border-radius: 2px;
+  }
+
+  .brand-sub {
+    font-size: 0.65rem;
+    font-weight: 900;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--blue-light);
+    opacity: 0.8;
+  }
 
   .topbar-right {
-    display: flex;
-    align-items: center;
-    gap: 28px;
+    display: flex; align-items: center; gap: 24px;
   }
 
+  .clock-block { text-align: right; }
+
   #clock {
-    font-family: 'DM Mono', monospace;
-    font-size: 1.6rem;
-    letter-spacing: 0.05em;
+    font-family: 'Nunito', sans-serif;
+    font-size: 1.7rem;
+    font-weight: 900;
+    color: var(--cream);
+    letter-spacing: 0.04em;
+    line-height: 1;
   }
+
   #dateline {
-    font-family: 'DM Mono', monospace;
-    font-size: 0.85rem;
-    color: var(--muted);
+    font-size: 0.68rem;
+    font-weight: 700;
+    color: var(--blue-light);
+    letter-spacing: 0.12em;
     text-transform: uppercase;
-    letter-spacing: 0.1em;
+    margin-top: 2px;
+    opacity: 0.8;
   }
 
   .refresh-badge {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 0.75rem;
-    color: var(--muted);
-    font-family: 'DM Mono', monospace;
+    display: flex; align-items: center; gap: 8px;
+    font-size: 0.7rem; font-weight: 700;
+    color: var(--blue-light); opacity: 0.7;
+    letter-spacing: 0.04em;
   }
 
   .pulse-dot {
-    width: 8px; height: 8px;
-    border-radius: 50%;
-    background: var(--accent);
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--blue-light);
     animation: pulse 2s ease-in-out infinite;
+    flex-shrink: 0;
   }
   @keyframes pulse {
     0%,100%{ opacity:1; transform:scale(1); }
-    50%    { opacity:0.4; transform:scale(0.7); }
+    50%    { opacity:0.3; transform:scale(0.6); }
   }
 
   .gear-btn {
-    background: none; border: none; cursor: pointer;
-    color: var(--muted); font-size: 1.1rem;
-    padding: 4px 8px; border-radius: 4px;
-    transition: color 0.15s;
+    background: var(--slate);
+    border: 2px solid var(--slate-light);
+    border-radius: 8px;
+    color: var(--cream); font-size: 1rem;
+    padding: 5px 10px; cursor: pointer;
+    transition: all 0.15s; line-height: 1;
   }
-  .gear-btn:hover { color: var(--accent); }
+  .gear-btn:hover { border-color: var(--blue); color: var(--blue-light); }
 
   /* ── MAIN SPLIT ── */
   .main {
@@ -102,70 +161,69 @@
     grid-template-columns: 1fr 2fr;
     flex: 1;
     overflow: hidden;
+    position: relative; z-index: 1;
   }
 
+  /* ── PANELS ── */
   .panel {
-    display: flex;
-    flex-direction: column;
+    display: flex; flex-direction: column;
     overflow: hidden;
-    border-right: 2px solid var(--border);
+    border-right: 3px solid var(--blue);
   }
   .panel:last-child { border-right: none; }
 
   .panel-header {
-    display: flex;
-    align-items: center;
+    display: flex; align-items: center;
     justify-content: space-between;
-    padding: 14px 24px;
-    background: var(--panel);
+    padding: 10px 18px;
+    background: var(--navy-light);
     border-bottom: 2px solid var(--border);
     flex-shrink: 0;
   }
 
   .panel-title {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 1.25rem;
-    letter-spacing: 0.15em;
-    color: var(--muted);
+    font-family: 'Pacifico', cursive;
+    font-size: 1rem;
+    color: var(--cream);
+    text-shadow: 1px 1px 0 var(--slate-dark);
   }
 
   .panel-subtitle {
-    font-size: 0.75rem;
-    color: var(--muted);
-    font-family: 'DM Mono', monospace;
-    opacity: 0.7;
+    font-size: 0.65rem; font-weight: 700;
+    color: var(--blue-light); opacity: 0.7;
+    letter-spacing: 0.06em;
+    max-width: 200px;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   }
 
-  /* ── STOCK PANEL ── */
+  /* ── STOCK FRAME ── */
   #stock-frame {
-    width: 100%; flex: 1; border: none; background: var(--bg);
+    width: 100%; flex: 1; border: none;
+    background: var(--slate-dark);
   }
 
   .stock-placeholder {
     flex: 1; display: flex; flex-direction: column;
     align-items: center; justify-content: center;
-    gap: 16px; color: var(--muted);
+    gap: 14px; color: var(--blue-light); opacity: 0.5;
   }
-  .stock-placeholder .icon { font-size: 3rem; opacity: 0.3; }
+  .stock-placeholder .icon { font-size: 2.5rem; }
   .stock-placeholder p {
-    font-size: 0.9rem; font-family: 'DM Mono', monospace;
-    opacity: 0.6; text-align: center; max-width: 280px; line-height: 1.6;
+    font-size: 0.8rem; font-weight: 700;
+    text-align: center; max-width: 220px; line-height: 1.6;
   }
   .config-hint {
-    margin-top: 8px; padding: 10px 18px;
-    border: 1px solid var(--border); border-radius: 4px;
-    font-size: 0.75rem; font-family: 'DM Mono', monospace;
-    color: var(--accent); background: rgba(245,200,66,0.05);
+    padding: 8px 14px; border: 2px solid var(--blue);
+    border-radius: 8px; font-size: 0.72rem; font-weight: 800;
+    color: var(--blue-light); background: rgba(122,184,212,0.08);
+    letter-spacing: 0.04em;
   }
 
-  /* ── CALENDAR PANEL ── */
+  /* ── CALENDAR ── */
   .calendar-body {
-    flex: 1;
-    overflow: hidden;
-    padding: 10px 14px;
+    flex: 1; overflow: hidden; padding: 8px 10px;
     display: grid;
     grid-template-columns: 1fr 1fr;
-    grid-auto-rows: min-content;
     gap: 0 2px;
     align-content: start;
   }
@@ -174,93 +232,135 @@
     grid-column: 1 / -1;
     display: flex; flex-direction: column;
     align-items: center; justify-content: center;
-    height: 100%; gap: 12px;
-    color: var(--muted);
-    font-family: 'DM Mono', monospace; font-size: 0.85rem;
-    text-align: center; padding: 20px;
-    line-height: 1.6;
+    height: 200px; gap: 10px;
+    color: var(--blue-light); opacity: 0.6;
+    font-size: 0.8rem; font-weight: 700;
+    text-align: center; line-height: 1.6;
   }
   .cal-status .spinner {
-    width:28px; height:28px;
-    border: 2px solid var(--border);
-    border-top-color: var(--accent);
+    width: 26px; height: 26px;
+    border: 2px solid rgba(122,184,212,0.2);
+    border-top-color: var(--blue);
     border-radius: 50%;
     animation: spin 0.8s linear infinite;
   }
   @keyframes spin { to { transform:rotate(360deg); } }
 
+  /* Calendar columns */
+  .cal-col {
+    overflow: hidden; min-width: 0;
+  }
+  .cal-col:first-child {
+    border-right: 1px solid rgba(122,184,212,0.15);
+    padding-right: 6px;
+  }
+  .cal-col:last-child { padding-left: 6px; }
+
   .day-group {
-    border-bottom: 1px solid var(--border);
-    animation: fadeUp 0.4s ease both;
-    min-width: 0;
+    margin-bottom: 4px;
+    border-radius: 10px;
+    overflow: hidden;
+    border: 2px solid rgba(122,184,212,0.1);
+    background: rgba(30,42,58,0.5);
+    animation: fadeUp 0.35s ease both;
   }
   @keyframes fadeUp {
-    from { opacity:0; transform:translateY(8px); }
+    from { opacity:0; transform:translateY(6px); }
     to   { opacity:1; transform:translateY(0); }
   }
 
   .day-label {
     display: flex; align-items: baseline; gap: 8px;
-    padding: 8px 14px 5px;
-    background: var(--bg);
-    border-bottom: 1px solid var(--border);
+    padding: 6px 12px 5px;
+    background: var(--navy);
+    border-bottom: 1px solid rgba(122,184,212,0.15);
   }
-  .day-label.is-today { background: var(--today-bg); }
+  .day-label.is-today {
+    background: linear-gradient(90deg, rgba(200,148,58,0.3) 0%, rgba(30,42,58,0.8) 100%);
+    border-bottom-color: var(--gold);
+  }
 
   .day-name {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 1.1rem; letter-spacing: 0.1em;
+    font-family: 'Pacifico', cursive;
+    font-size: 0.95rem;
+    color: var(--cream);
   }
-  .day-label.is-today .day-name { color: var(--accent); }
+  .day-label.is-today .day-name { color: var(--gold); }
 
   .day-date {
-    font-family: 'DM Mono', monospace;
-    font-size: 0.7rem; color: var(--muted);
+    font-size: 0.68rem; font-weight: 800;
+    color: var(--blue-light); opacity: 0.7;
+    letter-spacing: 0.06em;
   }
 
   .today-tag {
-    font-size: 0.6rem; font-family: 'DM Mono', monospace;
-    background: var(--accent); color: #000;
-    padding: 1px 5px; border-radius: 2px;
-    letter-spacing: 0.08em; font-weight: 700;
-    text-transform: uppercase;
+    font-size: 0.58rem; font-weight: 900;
+    background: var(--gold); color: var(--navy);
+    padding: 1px 6px; border-radius: 3px;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    margin-left: 2px;
   }
 
   .event-row {
     display: flex; align-items: flex-start;
-    gap: 10px; padding: 7px 14px;
+    gap: 8px; padding: 5px 10px 5px 12px;
     border-left: 3px solid transparent;
+    background: rgba(255,255,255,0.02);
   }
-  .event-row.all-day { border-left-color: var(--accent2); }
-  .event-row.timed   { border-left-color: var(--accent); }
+  .event-row + .event-row { border-top: 1px solid rgba(122,184,212,0.07); }
+  .event-row.all-day { border-left-color: var(--pink); }
+  .event-row.timed   { border-left-color: var(--blue); }
 
   .event-time {
-    font-family: 'DM Mono', monospace; font-size: 0.75rem;
-    color: var(--muted); min-width: 66px; padding-top: 1px; flex-shrink: 0;
+    font-size: 0.68rem; font-weight: 800;
+    color: var(--blue-light); opacity: 0.8;
+    min-width: 62px; flex-shrink: 0;
+    padding-top: 1px;
+    letter-spacing: 0.02em;
   }
   .event-row.all-day .event-time {
-    color: var(--accent2); font-size: 0.68rem;
+    color: var(--pink); font-size: 0.62rem;
     text-transform: uppercase; letter-spacing: 0.08em;
   }
 
-  .event-title { font-size: 0.88rem; font-weight: 500; line-height: 1.35; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .event-loc   { font-size: 0.68rem; color: var(--muted); margin-top: 2px; font-family: 'DM Mono', monospace; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .event-body { min-width: 0; flex: 1; }
+
+  .event-title {
+    font-size: 0.82rem; font-weight: 800;
+    color: var(--cream); line-height: 1.3;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .event-loc {
+    font-size: 0.63rem; font-weight: 700;
+    color: var(--blue-light); opacity: 0.65;
+    margin-top: 1px;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
 
   /* ── FOOTER ── */
   .footer {
-    height: 32px; background: var(--panel);
-    border-top: 2px solid var(--border);
+    position: relative; z-index: 2;
+    height: 28px;
+    background: var(--navy);
+    border-top: 2px solid var(--blue);
     display: flex; align-items: center;
-    justify-content: space-between; padding: 0 24px; flex-shrink: 0;
+    justify-content: space-between;
+    padding: 0 20px; flex-shrink: 0;
   }
-  .footer-left {
-    font-family: 'DM Mono', monospace; font-size: 0.7rem;
-    color: var(--muted); letter-spacing: 0.06em;
+  .footer-text {
+    font-size: 0.62rem; font-weight: 800;
+    color: var(--blue-light); opacity: 0.5;
+    letter-spacing: 0.12em; text-transform: uppercase;
   }
-  #countdown {
-    font-family: 'DM Mono', monospace; font-size: 0.7rem; color: var(--muted);
+
+  /* ── SPRINKLE DIVIDERS ── */
+  .sprinkle-strip {
+    display: flex; align-items: center;
+    gap: 5px; opacity: 0.5;
   }
-  #countdown span { color: var(--accent); }
+  .ss-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+  }
 
   /* ── CONFIG OVERLAY ── */
   #config-overlay {
@@ -271,113 +371,128 @@
   #config-overlay.visible { display: flex; }
 
   .config-box {
-    background: var(--panel); border: 2px solid var(--border);
-    border-radius: 8px; padding: 36px 40px;
-    width: 580px; max-width: 90vw;
+    background: var(--navy);
+    border: 3px solid var(--blue);
+    border-radius: 18px; padding: 30px 36px;
+    width: 560px; max-width: 92vw;
     max-height: 90vh; overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.6);
   }
 
   .config-box h2 {
-    font-family: 'Bebas Neue', sans-serif; font-size: 1.8rem;
-    letter-spacing: 0.12em; color: var(--accent); margin-bottom: 6px;
+    font-family: 'Pacifico', cursive;
+    font-size: 1.6rem; color: var(--cream);
+    text-shadow: 2px 2px 0 var(--slate-dark);
+    margin-bottom: 4px;
   }
   .config-box p {
-    font-size: 0.85rem; color: var(--muted);
-    margin-bottom: 24px; line-height: 1.5;
+    font-size: 0.8rem; font-weight: 700;
+    color: var(--blue-light); opacity: 0.7;
+    margin-bottom: 20px; line-height: 1.5;
   }
 
-  .config-field { margin-bottom: 18px; }
+  .config-section {
+    font-size: 0.65rem; font-weight: 900;
+    letter-spacing: 0.18em; text-transform: uppercase;
+    color: var(--blue-light);
+    border-top: 2px dashed rgba(122,184,212,0.2);
+    padding-top: 16px; margin: 16px 0 12px;
+  }
+
+  .config-field { margin-bottom: 14px; }
   .config-field label {
-    display: block; font-family: 'DM Mono', monospace;
-    font-size: 0.75rem; text-transform: uppercase;
-    letter-spacing: 0.1em; color: var(--muted); margin-bottom: 6px;
+    display: block; font-size: 0.68rem; font-weight: 900;
+    text-transform: uppercase; letter-spacing: 0.1em;
+    color: var(--blue-light); opacity: 0.8; margin-bottom: 5px;
   }
   .config-field input, .config-field select {
-    width: 100%; background: var(--bg);
-    border: 1px solid var(--border); border-radius: 4px;
-    padding: 10px 14px; color: var(--text);
-    font-family: 'DM Mono', monospace; font-size: 0.85rem;
-    outline: none; transition: border-color 0.15s;
+    width: 100%; background: var(--slate-dark);
+    border: 2px solid var(--slate-light); border-radius: 8px;
+    padding: 9px 12px; color: var(--cream);
+    font-family: 'Nunito', sans-serif; font-size: 0.82rem;
+    font-weight: 700; outline: none; transition: border-color 0.15s;
   }
-  .config-field input:focus, .config-field select:focus { border-color: var(--accent); }
-  .config-field select option { background: var(--panel); }
+  .config-field input:focus, .config-field select:focus { border-color: var(--blue); }
+  .config-field select option { background: var(--navy); }
 
   .hint {
-    font-size: 0.72rem; color: var(--muted); margin-top: 5px;
-    font-family: 'DM Mono', monospace; line-height: 1.6;
+    font-size: 0.68rem; font-weight: 700;
+    color: var(--blue-light); opacity: 0.6;
+    margin-top: 5px; line-height: 1.6;
   }
-
-  .hint a { color: var(--accent); text-decoration: none; }
-  .hint a:hover { text-decoration: underline; }
+  .hint a { color: var(--blue); }
 
   .hint-box {
-    background: rgba(245,200,66,0.06); border: 1px solid rgba(245,200,66,0.2);
-    border-radius: 4px; padding: 10px 14px; margin-top: 8px;
+    background: rgba(122,184,212,0.07);
+    border: 2px solid rgba(122,184,212,0.2);
+    border-radius: 10px; padding: 10px 14px; margin-top: 8px;
   }
   .hint-box .step {
-    font-size: 0.72rem; font-family: 'DM Mono', monospace;
-    color: var(--muted); line-height: 2;
+    font-size: 0.68rem; font-weight: 700;
+    color: var(--blue-light); opacity: 0.8; line-height: 2;
   }
-  .hint-box .step b { color: var(--accent); }
+  .hint-box .step b { color: var(--gold); }
 
-  .config-section-title {
-    font-family: 'Bebas Neue', sans-serif; font-size: 1rem;
-    letter-spacing: 0.15em; color: var(--muted);
-    border-top: 1px solid var(--border);
-    padding-top: 18px; margin: 18px 0 14px;
-  }
+  .config-actions { display: flex; gap: 10px; margin-top: 20px; }
 
-  .config-actions {
-    display: flex; gap: 12px; margin-top: 24px;
-  }
   .btn {
-    padding: 10px 22px; border-radius: 4px; border: none;
-    cursor: pointer; font-family: 'DM Mono', monospace;
-    font-size: 0.85rem; font-weight: 500;
-    letter-spacing: 0.05em; transition: opacity 0.15s;
+    padding: 10px 22px; border-radius: 10px; border: none;
+    cursor: pointer; font-family: 'Nunito', sans-serif;
+    font-size: 0.85rem; font-weight: 900;
+    letter-spacing: 0.04em; transition: all 0.15s;
+    box-shadow: 0 3px 0;
   }
-  .btn:hover { opacity: 0.85; }
-  .btn-primary { background: var(--accent); color: #000; }
-  .btn-ghost   { background: transparent; color: var(--muted); border: 1px solid var(--border); }
+  .btn:active { transform: translateY(2px); box-shadow: 0 1px 0; }
+  .btn-primary {
+    background: var(--blue); color: var(--navy);
+    box-shadow-color: var(--blue-dark);
+    box-shadow: 0 3px 0 var(--blue-dark);
+  }
+  .btn-primary:hover { background: var(--blue-light); }
+  .btn-ghost {
+    background: var(--slate); color: var(--cream);
+    border: 2px solid var(--slate-light);
+    box-shadow: 0 3px 0 var(--slate-dark);
+  }
+  .btn-ghost:hover { border-color: var(--blue); }
 </style>
 </head>
 <body>
 
+<!-- SPRINKLES -->
+<div class="sprinkles-bg" id="sprinkles-bg"></div>
+
 <!-- CONFIG OVERLAY -->
 <div id="config-overlay">
   <div class="config-box">
-    <h2>Dashboard Setup</h2>
-    <p>These settings are saved in your browser. You only need to set them once.</p>
+    <h2>Dashboard Setup 🍪</h2>
+    <p>Settings are saved in your browser — set once and done.</p>
 
-    <div class="config-section-title">Stock Panel</div>
-
+    <div class="config-section">Stock Panel</div>
     <div class="config-field">
       <label>Stock Display URL (GitHub Pages)</label>
       <input type="text" id="cfg-stock-url" placeholder="https://yourusername.github.io/your-repo/stock-display.html" />
     </div>
 
-    <div class="config-section-title">Calendar Panel</div>
-
+    <div class="config-section">Calendar Panel</div>
     <div class="config-field">
       <label>Calendar Source</label>
       <select id="cfg-cal-type">
         <option value="gas">Google Apps Script proxy (recommended for Outlook)</option>
-        <option value="ical">Direct iCal URL (may not work with Outlook)</option>
+        <option value="ical">Direct iCal URL</option>
       </select>
     </div>
 
     <div id="gas-fields">
       <div class="config-field">
         <label>Google Apps Script Web App URL</label>
-        <input type="text" id="cfg-gas-url" placeholder="https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec" />
+        <input type="text" id="cfg-gas-url" placeholder="https://script.google.com/macros/s/YOUR_ID/exec" />
       </div>
       <div class="hint-box">
-        <div class="step">One-time setup (takes ~5 min):</div>
         <div class="step"><b>1.</b> Go to <a href="https://script.google.com" target="_blank">script.google.com</a> → New project</div>
-        <div class="step"><b>2.</b> Paste the Apps Script code (see dashboard-calendar-proxy.gs file)</div>
+        <div class="step"><b>2.</b> Paste code from dashboard-calendar-proxy.gs</div>
         <div class="step"><b>3.</b> Replace YOUR_ICAL_URL_HERE with your Outlook ICS link</div>
-        <div class="step"><b>4.</b> Deploy → New deployment → Web app → Anyone can access → Deploy</div>
-        <div class="step"><b>5.</b> Copy the web app URL and paste it above</div>
+        <div class="step"><b>4.</b> Deploy → Web app → Anyone → Deploy → Copy URL</div>
       </div>
     </div>
 
@@ -385,12 +500,11 @@
       <div class="config-field">
         <label>iCal Feed URL</label>
         <input type="text" id="cfg-ical-url" placeholder="https://outlook.office365.com/owa/calendar/..." />
-        <div class="hint">Note: Outlook blocks direct browser fetches. Use the Apps Script option above instead.</div>
+        <div class="hint">Note: Outlook blocks direct browser fetches. Use Apps Script option above.</div>
       </div>
     </div>
 
-    <div class="config-section-title">General</div>
-
+    <div class="config-section">General</div>
     <div class="config-field">
       <label>Auto-Refresh Interval (minutes)</label>
       <input type="number" id="cfg-refresh" value="10" min="1" max="60" />
@@ -405,15 +519,23 @@
 
 <!-- TOP BAR -->
 <div class="topbar">
-  <div class="brand">Cookie Dough <span>HQ</span></div>
+  <div class="brand">
+    <img class="brand-logo" src="CD_Logo_words.jpg" alt="Let's Go Cookie Dough"
+      onerror="this.style.display='none'; document.getElementById('brand-fallback').style.display='block'">
+    <div class="brand-fallback" id="brand-fallback" style="display:none">
+      Let's Go <span>Cookie Dough</span>
+    </div>
+    <div class="brand-divider"></div>
+    <div class="brand-sub">Production HQ</div>
+  </div>
   <div class="topbar-right">
-    <div>
+    <div class="clock-block">
       <div id="clock">--:--:--</div>
       <div id="dateline">Loading...</div>
     </div>
     <div class="refresh-badge">
       <div class="pulse-dot"></div>
-      <span id="countdown">Next refresh in <span id="countdown-val">--</span></span>
+      <span id="countdown-val">--</span>
     </div>
     <button class="gear-btn" onclick="openConfig()" title="Settings">⚙</button>
   </div>
@@ -435,7 +557,7 @@
   <div class="panel">
     <div class="panel-header">
       <div class="panel-title">Upcoming Events</div>
-      <div class="panel-subtitle">Next 3 weeks</div>
+      <div class="panel-subtitle">Next 4 weeks</div>
     </div>
     <div class="calendar-body" id="cal-body">
       <div class="cal-status"><div class="spinner"></div><span>Loading calendar...</span></div>
@@ -446,12 +568,32 @@
 
 <!-- FOOTER -->
 <div class="footer">
-  <div class="footer-left">COOKIE DOUGH HQ · AUTO-REFRESH ENABLED</div>
-  <div id="last-updated">Last updated: —</div>
+  <div class="footer-text">Let's Go Cookie Dough · Production HQ</div>
+  <div class="sprinkle-strip">
+    <div class="ss-dot" style="background:#e8a0b4"></div>
+    <div class="ss-dot" style="background:#7ab8d4"></div>
+    <div class="ss-dot" style="background:#c8943a"></div>
+    <div class="ss-dot" style="background:#4a9e6a"></div>
+    <div class="ss-dot" style="background:#9a7abf"></div>
+  </div>
+  <div class="footer-text" id="last-updated">Last updated: —</div>
 </div>
 
 <script>
-// ── CONFIG ───────────────────────────────────────────────────────────────────
+// ── SPRINKLES ─────────────────────────────────────────────────────────────────
+(function() {
+  const colors = ['#7ab8d4','#e8a0b4','#c8943a','#9a7abf','#4a9e6a'];
+  const container = document.getElementById('sprinkles-bg');
+  for (let i = 0; i < 30; i++) {
+    const el = document.createElement('div');
+    el.className = 'sprinkle';
+    const w = 5 + Math.random() * 7, h = 16 + Math.random() * 20;
+    el.style.cssText = `width:${w}px;height:${h}px;left:${Math.random()*100}%;top:${Math.random()*100}%;background:${colors[i%colors.length]};transform:rotate(${Math.random()*360}deg)`;
+    container.appendChild(el);
+  }
+})();
+
+// ── CONFIG ────────────────────────────────────────────────────────────────────
 function loadConfig() {
   try { return JSON.parse(localStorage.getItem('hq_config2')) || {}; }
   catch { return {}; }
@@ -487,41 +629,40 @@ function closeConfig() {
 
 function toggleCalFields() {
   const t = document.getElementById('cfg-cal-type').value;
-  document.getElementById('gas-fields').style.display   = t === 'gas'   ? 'block' : 'none';
-  document.getElementById('ical-fields').style.display  = t === 'ical'  ? 'block' : 'none';
+  document.getElementById('gas-fields').style.display  = t === 'gas'  ? 'block' : 'none';
+  document.getElementById('ical-fields').style.display = t === 'ical' ? 'block' : 'none';
 }
 document.getElementById('cfg-cal-type').addEventListener('change', toggleCalFields);
 
 // ── CLOCK ─────────────────────────────────────────────────────────────────────
 function updateClock() {
   const now = new Date();
-  const days   = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const DAYS   = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   document.getElementById('clock').textContent =
     now.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
   document.getElementById('dateline').textContent =
-    `${days[now.getDay()]} · ${months[now.getMonth()]} ${now.getDate()}, ${now.getFullYear()}`;
+    `${DAYS[now.getDay()]} · ${MONTHS[now.getMonth()]} ${now.getDate()}, ${now.getFullYear()}`;
 }
 setInterval(updateClock, 1000);
 updateClock();
 
 // ── REFRESH COUNTDOWN ─────────────────────────────────────────────────────────
-let refreshTimer = null, refreshSecondsLeft = 0;
+let refreshTimer = null, refreshSecsLeft = 0;
 
 function startRefreshTimer(minutes) {
   if (refreshTimer) clearInterval(refreshTimer);
-  refreshSecondsLeft = minutes * 60;
+  refreshSecsLeft = minutes * 60;
   refreshTimer = setInterval(() => {
-    refreshSecondsLeft--;
-    const m = Math.floor(refreshSecondsLeft / 60);
-    const s = refreshSecondsLeft % 60;
+    refreshSecsLeft--;
+    const m = Math.floor(refreshSecsLeft / 60), s = refreshSecsLeft % 60;
     document.getElementById('countdown-val').textContent =
-      m > 0 ? `${m}m ${String(s).padStart(2,'0')}s` : `${s}s`;
-    if (refreshSecondsLeft <= 0) location.reload();
+      `Refresh in ${m > 0 ? m + 'm ' : ''}${String(s).padStart(2,'0')}s`;
+    if (refreshSecsLeft <= 0) location.reload();
   }, 1000);
 }
 
-// ── STOCK PANEL ───────────────────────────────────────────────────────────────
+// ── STOCK ─────────────────────────────────────────────────────────────────────
 function renderStock(url) {
   const container = document.getElementById('stock-content');
   const display   = document.getElementById('stock-url-display');
@@ -535,133 +676,86 @@ function renderStock(url) {
     return;
   }
   display.textContent = url.replace(/^https?:\/\//,'').replace(/\/$/,'');
-  container.innerHTML = `<iframe id="stock-frame" src="${url}" allowfullscreen></iframe>`;
+  container.innerHTML = `<iframe id="stock-frame" src="${url}" style="width:100%;flex:1;border:none;background:transparent" allowfullscreen></iframe>`;
 }
 
-// ── ICAL PARSER (with RRULE recurrence expansion) ────────────────────────────
+// ── ICAL PARSER WITH RRULE ────────────────────────────────────────────────────
 function parseICal(text) {
-  // Unfold folded lines (RFC 5545: lines folded with CRLF + whitespace)
-  text = text.replace(/\r\n[ \t]/g, '').replace(/\r/g, '');
-
+  text = text.replace(/\r\n[ \t]/g,'').replace(/\r/g,'');
   const events = [];
   const blocks = text.split('BEGIN:VEVENT');
   blocks.shift();
 
   const now = new Date();
-  const windowEnd = new Date(now); windowEnd.setDate(windowEnd.getDate() + 22);
+  const windowEnd   = new Date(now); windowEnd.setDate(windowEnd.getDate() + 29);
   const windowStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
   for (const block of blocks) {
     const get = key => {
-      const m = block.match(new RegExp(`(?:^|\\n)${key}[^:\\n]*:([^\\n]+)`, 'i'));
+      const m = block.match(new RegExp(`(?:^|\\n)${key}[^:\\n]*:([^\\n]+)`,'i'));
       return m ? m[1].trim() : '';
     };
-
     const summary  = get('SUMMARY').replace(/\\,/g,',').replace(/\\n/g,' ').replace(/\\;/g,';');
     const location = get('LOCATION').replace(/\\,/g,',').replace(/\\n/g,' ');
     const dtstart  = get('DTSTART');
-    const dtend    = get('DTEND');
     const rrule    = get('RRULE');
-    // Collect EXDATEs (exception dates — cancelled occurrences)
-    const exdates  = [];
-    const exRe = /(?:^|\n)EXDATE[^:\n]*:([^\n]+)/gi;
-    let exMatch;
-    while ((exMatch = exRe.exec(block)) !== null) {
-      exMatch[1].trim().split(',').forEach(d => exdates.push(d.trim().replace(/[TZ]/g,'').slice(0,8)));
-    }
 
     if (!summary || !dtstart) continue;
 
     const startDate = parseICalDate(dtstart);
     if (!startDate) continue;
 
+    // Collect EXDATEs
+    const exdates = [];
+    const exRe = /(?:^|\n)EXDATE[^:\n]*:([^\n]+)/gi;
+    let exm;
+    while ((exm = exRe.exec(block)) !== null) {
+      exm[1].trim().split(',').forEach(d => exdates.push(d.trim().replace(/[TZ]/g,'').slice(0,8)));
+    }
+
     if (!rrule) {
-      // Non-recurring: just add if in window
-      if (startDate >= windowStart && startDate <= windowEnd) {
-        events.push({ summary, location, dtstart, dtend });
-      }
+      if (startDate >= windowStart && startDate <= windowEnd)
+        events.push({ summary, location, dtstart });
       continue;
     }
 
-    // ── Expand recurrence ──
+    // Parse RRULE
     const rule = {};
-    rrule.split(';').forEach(part => {
-      const [k,v] = part.split('=');
-      rule[k.toUpperCase()] = v;
-    });
-
+    rrule.split(';').forEach(p => { const [k,v]=p.split('='); rule[k.toUpperCase()]=v; });
     const freq     = rule['FREQ'] || '';
     const interval = parseInt(rule['INTERVAL'] || '1');
     const count    = rule['COUNT']  ? parseInt(rule['COUNT'])  : null;
-    const untilStr = rule['UNTIL'];
-    const until    = untilStr ? parseICalDate(untilStr) : null;
-    const byDay    = rule['BYDAY']  ? rule['BYDAY'].split(',')  : null;
-
-    // Day-of-week map
-    const DOW = { SU:0, MO:1, TU:2, WE:3, TH:4, FR:5, SA:6 };
+    const until    = rule['UNTIL']  ? parseICalDate(rule['UNTIL']) : null;
 
     let cursor = new Date(startDate);
-    let occurrenceCount = 0;
-    const maxIterations = 500; // safety cap
-    let iterations = 0;
+    let n = 0, iters = 0;
 
-    while (iterations++ < maxIterations) {
-      // Stop conditions
+    while (iters++ < 600) {
       if (until && cursor > until) break;
-      if (count !== null && occurrenceCount >= count) break;
+      if (count !== null && n >= count) break;
       if (cursor > windowEnd) break;
 
-      // Check if this occurrence is in our display window
       if (cursor >= windowStart) {
         const exKey = `${cursor.getFullYear()}${String(cursor.getMonth()+1).padStart(2,'0')}${String(cursor.getDate()).padStart(2,'0')}`;
         if (!exdates.includes(exKey)) {
-          // Rebuild dtstart string with this cursor date
-          const allDay = isAllDay(dtstart);
-          let newDtstart;
+          const allDay = !dtstart.includes('T');
+          let newDt;
           if (allDay) {
-            newDtstart = `${cursor.getFullYear()}${String(cursor.getMonth()+1).padStart(2,'0')}${String(cursor.getDate()).padStart(2,'0')}`;
+            newDt = `${cursor.getFullYear()}${String(cursor.getMonth()+1).padStart(2,'0')}${String(cursor.getDate()).padStart(2,'0')}`;
           } else {
-            // Keep original time, just advance date
-            newDtstart = `${cursor.getFullYear()}${String(cursor.getMonth()+1).padStart(2,'0')}${String(cursor.getDate()).padStart(2,'0')}T${dtstart.includes('T') ? dtstart.split('T')[1] : '000000'}`;
+            const timePart = dtstart.includes('T') ? dtstart.split('T')[1] : '000000';
+            newDt = `${cursor.getFullYear()}${String(cursor.getMonth()+1).padStart(2,'0')}${String(cursor.getDate()).padStart(2,'0')}T${timePart}`;
           }
-          events.push({ summary, location, dtstart: newDtstart, dtend });
+          events.push({ summary, location, dtstart: newDt });
         }
       }
+      n++;
 
-      occurrenceCount++;
-
-      // Advance cursor by frequency
-      if (freq === 'DAILY') {
-        cursor = new Date(cursor); cursor.setDate(cursor.getDate() + interval);
-      } else if (freq === 'WEEKLY') {
-        if (byDay && byDay.length > 1) {
-          // Multiple days per week (e.g. MO,WE,FR)
-          // Find next matching day within the week
-          let advanced = false;
-          for (let d = 1; d <= 7; d++) {
-            const next = new Date(cursor); next.setDate(next.getDate() + d);
-            const nextDow = ['SU','MO','TU','WE','TH','FR','SA'][next.getDay()];
-            if (byDay.some(bd => bd.replace(/[+-\d]/g,'') === nextDow)) {
-              // Check if still within same week cycle
-              const weekDiff = Math.floor((next - startDate) / (7 * 24 * 3600 * 1000));
-              if (weekDiff % interval === 0 || d <= 6) {
-                cursor = next; advanced = true; break;
-              }
-            }
-          }
-          if (!advanced) {
-            cursor = new Date(cursor); cursor.setDate(cursor.getDate() + 7 * interval);
-          }
-        } else {
-          cursor = new Date(cursor); cursor.setDate(cursor.getDate() + 7 * interval);
-        }
-      } else if (freq === 'MONTHLY') {
-        cursor = new Date(cursor); cursor.setMonth(cursor.getMonth() + interval);
-      } else if (freq === 'YEARLY') {
-        cursor = new Date(cursor); cursor.setFullYear(cursor.getFullYear() + interval);
-      } else {
-        break; // unknown freq
-      }
+      if      (freq === 'DAILY')   { cursor = new Date(cursor); cursor.setDate(cursor.getDate() + interval); }
+      else if (freq === 'WEEKLY')  { cursor = new Date(cursor); cursor.setDate(cursor.getDate() + 7 * interval); }
+      else if (freq === 'MONTHLY') { cursor = new Date(cursor); cursor.setMonth(cursor.getMonth() + interval); }
+      else if (freq === 'YEARLY')  { cursor = new Date(cursor); cursor.setFullYear(cursor.getFullYear() + interval); }
+      else break;
     }
   }
   return events;
@@ -670,24 +764,15 @@ function parseICal(text) {
 function parseICalDate(str) {
   if (!str) return null;
   const c = str.replace(/[TZ]/g,'').replace(/[-:]/g,'');
-  if (c.length === 8)
-    return new Date(+c.slice(0,4), +c.slice(4,6)-1, +c.slice(6,8));
-  if (c.length >= 14)
-    return new Date(+c.slice(0,4), +c.slice(4,6)-1, +c.slice(6,8), +c.slice(8,10), +c.slice(10,12));
+  if (c.length === 8)  return new Date(+c.slice(0,4), +c.slice(4,6)-1, +c.slice(6,8));
+  if (c.length >= 14)  return new Date(+c.slice(0,4), +c.slice(4,6)-1, +c.slice(6,8), +c.slice(8,10), +c.slice(10,12));
   return null;
 }
-
-function isAllDay(dtstart) { return !dtstart.includes('T'); }
+function isAllDay(s) { return !s.includes('T'); }
 function dayKey(d) { return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`; }
-function sameDay(a,b) {
-  return a.getFullYear()===b.getFullYear() && a.getMonth()===b.getMonth() && a.getDate()===b.getDate();
-}
-function formatTime(d) {
-  return d.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',hour12:true});
-}
-function escHtml(s) {
-  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
+function sameDay(a,b) { return a.getFullYear()===b.getFullYear()&&a.getMonth()===b.getMonth()&&a.getDate()===b.getDate(); }
+function formatTime(d) { return d.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',hour12:true}); }
+function escHtml(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
 // ── CALENDAR LOADER ───────────────────────────────────────────────────────────
 async function loadCalendar(cfg) {
@@ -696,47 +781,34 @@ async function loadCalendar(cfg) {
   const url = calType === 'gas' ? cfg.gasUrl : cfg.icalUrl;
 
   if (!url) {
-    body.innerHTML = `<div class="cal-status">
-      📅 No calendar configured.<br>Click ⚙ to set up your Outlook calendar.
-    </div>`;
+    body.innerHTML = `<div class="cal-status">📅 No calendar configured.<br>Click ⚙ to set up your Outlook calendar.</div>`;
     return;
   }
 
-  body.innerHTML = `<div class="cal-status"><div class="spinner"></div><span>Loading calendar…</span></div>`;
+  body.innerHTML = `<div class="cal-status"><div class="spinner"></div>Loading calendar…</div>`;
 
   try {
     let icalText;
-
     if (calType === 'gas') {
-      // Google Apps Script proxy returns the iCal text directly
-      const resp = await fetch(url, { cache: 'no-store' });
+      const resp = await fetch(url, { cache:'no-store' });
       if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
       icalText = await resp.text();
     } else {
-      // Direct iCal — try without proxy first, fall back to corsproxy
       try {
-        const resp = await fetch(url, { cache: 'no-store' });
+        const resp = await fetch(url, { cache:'no-store' });
         if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
         icalText = await resp.text();
       } catch {
-        const proxy = 'https://corsproxy.io/?' + encodeURIComponent(url);
-        const resp2 = await fetch(proxy, { cache: 'no-store' });
+        const resp2 = await fetch('https://corsproxy.io/?'+encodeURIComponent(url), { cache:'no-store' });
         if (!resp2.ok) throw new Error(`HTTP ${resp2.status} via proxy`);
         icalText = await resp2.text();
       }
     }
-
     renderCalendar(icalText);
-
   } catch (err) {
-    body.innerHTML = `<div class="cal-status">
-      ⚠ Could not load calendar<br>
-      <small style="opacity:.6;font-size:.8em">${err.message}</small><br><br>
-      <small style="opacity:.5;font-size:.75em">
-        ${calType === 'ical'
-          ? 'Outlook blocks direct browser fetches. Switch to the Google Apps Script proxy method in ⚙ settings.'
-          : 'Make sure the Apps Script is deployed with "Anyone can access" permissions.'}
-      </small>
+    body.innerHTML = `<div class="cal-status">⚠ Could not load calendar<br>
+      <small style="opacity:.6">${err.message}</small><br>
+      <small style="opacity:.4;font-size:.75em">${calType==='ical'?'Try the Apps Script proxy option in ⚙ settings.':'Check Apps Script is deployed with "Anyone can access".'}</small>
     </div>`;
   }
 }
@@ -745,7 +817,7 @@ function renderCalendar(icalText) {
   const body   = document.getElementById('cal-body');
   const events = parseICal(icalText);
   const now    = new Date();
-  const end    = new Date(now); end.setDate(end.getDate() + 21);
+  const end    = new Date(now); end.setDate(now.getDate() + 28);
   const today  = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
   const filtered = events
@@ -753,7 +825,7 @@ function renderCalendar(icalText) {
     .sort((a,b) => parseICalDate(a.dtstart) - parseICalDate(b.dtstart));
 
   if (!filtered.length) {
-    body.innerHTML = `<div class="cal-status">🎉 No events in the next 3 weeks.</div>`;
+    body.innerHTML = `<div class="cal-status">🎉 No events in the next 4 weeks.</div>`;
     return;
   }
 
@@ -767,46 +839,36 @@ function renderCalendar(icalText) {
   const DAYS   = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
   const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
-  // Build day group HTML strings
-  function buildDayHtml(k, i) {
-    const { date, events: dayEvents } = groups[k];
+  function buildDay(k, i) {
+    const { date, evs: dayEvents = groups[k].events } = groups[k];
     const isToday = sameDay(date, now);
-    let h = `<div class="day-group" style="animation-delay:${i*0.05}s">
-      <div class="day-label ${isToday ? 'is-today' : ''}">
+    let h = `<div class="day-group" style="animation-delay:${i*0.04}s">
+      <div class="day-label ${isToday?'is-today':''}">
         <span class="day-name">${DAYS[date.getDay()]}</span>
         <span class="day-date">${MONTHS[date.getMonth()]} ${date.getDate()}</span>
-        ${isToday ? '<span class="today-tag">Today</span>' : ''}
+        ${isToday?'<span class="today-tag">Today</span>':''}
       </div>`;
     for (const ev of dayEvents) {
       const allDay = isAllDay(ev.dtstart);
       const d = parseICalDate(ev.dtstart);
-      h += `<div class="event-row ${allDay ? 'all-day' : 'timed'}">
-        <div class="event-time">${allDay ? 'All Day' : formatTime(d)}</div>
-        <div style="min-width:0;flex:1">
+      h += `<div class="event-row ${allDay?'all-day':'timed'}">
+        <div class="event-time">${allDay?'All Day':formatTime(d)}</div>
+        <div class="event-body">
           <div class="event-title">${escHtml(ev.summary)}</div>
-          ${ev.location ? `<div class="event-loc">📍 ${escHtml(ev.location)}</div>` : ''}
+          ${ev.location?`<div class="event-loc">📍 ${escHtml(ev.location)}</div>`:''}
         </div>
       </div>`;
     }
-    h += '</div>';
-    return h;
+    return h + '</div>';
   }
 
-  // Split days across two columns — fill left first, then right
-  // Aim for roughly half the days in each column
   const half = Math.ceil(order.length / 2);
   let col1 = '', col2 = '';
-  order.forEach((k, i) => {
-    if (i < half) col1 += buildDayHtml(k, i);
-    else          col2 += buildDayHtml(k, i);
-  });
+  order.forEach((k,i) => { i < half ? col1 += buildDay(k,i) : col2 += buildDay(k,i); });
 
-  body.innerHTML = `
-    <div style="overflow:hidden;min-width:0;border-right:1px solid var(--border)">${col1}</div>
-    <div style="overflow:hidden;min-width:0">${col2}</div>`;
-
+  body.innerHTML = `<div class="cal-col">${col1}</div><div class="cal-col">${col2}</div>`;
   document.getElementById('last-updated').textContent =
-    'Last updated: ' + new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
+    'Updated ' + new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
 }
 
 // ── INIT ──────────────────────────────────────────────────────────────────────
