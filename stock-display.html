@@ -152,7 +152,7 @@
 
   .flavor-name {
     font-family: 'Pacifico', cursive;
-    font-size: clamp(1rem, 1.6vw, 1.35rem);
+    font-size: clamp(1.2rem, 2vw, 1.6rem);
     white-space: nowrap;
   }
 
@@ -163,7 +163,7 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 2px;
+    gap: 4px;
     position: relative;
     overflow: hidden;
     transition: border-color 0.3s, background 0.3s;
@@ -186,18 +186,18 @@
 
   .stock-num {
     font-family: 'Nunito', sans-serif;
-    font-size: clamp(1.8rem, 3.2vw, 3rem);
+    font-size: clamp(2.4rem, 4.5vw, 4rem);
     font-weight: 900;
     line-height: 1;
     transition: color 0.3s;
   }
   .stock-cell.warn .stock-num { color: var(--warn); }
   .stock-cell.crit .stock-num { color: var(--crit); }
-  .stock-cell.empty .stock-num { color: var(--muted); font-size: clamp(1.2rem,2.2vw,1.8rem); }
+  .stock-cell.empty .stock-num { color: var(--muted); font-size: clamp(1.6rem,3vw,2.4rem); }
 
   .stock-status {
     font-family: 'DM Mono', monospace;
-    font-size: clamp(0.58rem, 0.9vw, 0.78rem);
+    font-size: clamp(0.7rem, 1.1vw, 0.95rem);
     font-weight: 500;
     letter-spacing: 0.1em;
     text-transform: uppercase;
