@@ -271,7 +271,7 @@
 
   .day-label {
     display: flex; align-items: baseline; gap: 8px;
-    padding: 6px 12px 5px;
+    padding: 8px 12px 7px;
     background: var(--navy);
     border-bottom: 1px solid rgba(122,184,212,0.15);
   }
@@ -282,19 +282,19 @@
 
   .day-name {
     font-family: 'Pacifico', cursive;
-    font-size: 1.2rem;
+    font-size: 1.5rem;
     color: var(--cream);
   }
   .day-label.is-today .day-name { color: var(--gold); }
 
   .day-date {
-    font-size: 0.85rem; font-weight: 800;
+    font-size: 1rem; font-weight: 800;
     color: var(--blue-light); opacity: 0.7;
     letter-spacing: 0.06em;
   }
 
   .today-tag {
-    font-size: 0.72rem; font-weight: 900;
+    font-size: 0.8rem; font-weight: 900;
     background: var(--gold); color: var(--navy);
     padding: 2px 8px; border-radius: 3px;
     letter-spacing: 0.1em; text-transform: uppercase;
@@ -303,7 +303,7 @@
 
   .event-row {
     display: flex; align-items: flex-start;
-    gap: 8px; padding: 6px 10px 6px 12px;
+    gap: 8px; padding: 8px 10px 8px 12px;
     border-left: 3px solid transparent;
     background: rgba(255,255,255,0.02);
   }
@@ -312,26 +312,26 @@
   .event-row.timed   { border-left-color: var(--blue); }
 
   .event-time {
-    font-size: 0.85rem; font-weight: 800;
+    font-size: 1rem; font-weight: 800;
     color: var(--blue-light); opacity: 0.8;
-    min-width: 72px; flex-shrink: 0;
+    min-width: 80px; flex-shrink: 0;
     padding-top: 1px;
     letter-spacing: 0.02em;
   }
   .event-row.all-day .event-time {
-    color: var(--pink); font-size: 0.78rem;
+    color: var(--pink); font-size: 0.88rem;
     text-transform: uppercase; letter-spacing: 0.08em;
   }
 
   .event-body { min-width: 0; flex: 1; }
 
   .event-title {
-    font-size: 1rem; font-weight: 800;
+    font-size: 1.15rem; font-weight: 800;
     color: var(--cream); line-height: 1.3;
     overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   }
   .event-loc {
-    font-size: 0.78rem; font-weight: 700;
+    font-size: 0.88rem; font-weight: 700;
     color: var(--blue-light); opacity: 0.65;
     margin-top: 2px;
     overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
@@ -871,12 +871,57 @@ function renderCalendar(icalText) {
     'Updated ' + new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
 }
 
+// ── PREVENT SLEEP ─────────────────────────────────────────────────────────────
+// Try the Screen Wake Lock API first (modern browsers)
+async function requestWakeLock() {
+  try {
+    if ('wakeLock' in navigator) {
+      const lock = await navigator.wakeLock.request('screen');
+      // Re-acquire on visibility change (required by spec)
+      document.addEventListener('visibilitychange', async () => {
+        if (document.visibilityState === 'visible') {
+          await navigator.wakeLock.request('screen');
+        }
+      });
+    }
+  } catch(e) {}
+}
+
+// Fallback: simulate user activity every 30 seconds
+// Dispatches a harmless mousemove event to trick the browser into thinking
+// the user is active, which prevents the Fire Stick display sleep
+function startActivitySimulator() {
+  setInterval(() => {
+    const event = new MouseEvent('mousemove', {
+      bubbles: true, cancelable: true,
+      clientX: Math.random() * 2, clientY: Math.random() * 2
+    });
+    document.dispatchEvent(event);
+
+    // Also play and immediately pause a silent audio context
+    // as an additional activity signal
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      gain.gain.value = 0; // silent
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.001);
+      setTimeout(() => ctx.close(), 100);
+    } catch(e) {}
+  }, 30000); // every 30 seconds
+}
+
 // ── INIT ──────────────────────────────────────────────────────────────────────
 function initDashboard() {
   const cfg = loadConfig();
   renderStock(cfg.stockUrl);
   loadCalendar(cfg);
   startRefreshTimer(cfg.refreshMin || 10);
+  requestWakeLock();
+  startActivitySimulator();
 }
 
 window.addEventListener('DOMContentLoaded', () => {
