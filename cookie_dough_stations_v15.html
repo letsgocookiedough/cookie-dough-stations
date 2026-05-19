@@ -1196,9 +1196,22 @@ async function fireAction(mode, flavor, row, destination) {
   } catch (e) {
     showToast(`[DEMO] ${flavor} moved 🍪`, 'success');
   } finally {
-    card?.querySelectorAll('button').forEach(b => b.classList.remove('btn-loading'));
+    card?.querySelectorAll('button').forEach(b => {
+      b.classList.remove('btn-loading');
+      b.style.opacity = '';
+      b.style.pointerEvents = '';
+    });
   }
 }
+
+// ── SAFETY: clear any stuck loading buttons every 8s ────────────────────────────
+setInterval(() => {
+  document.querySelectorAll('.btn-loading').forEach(b => {
+    b.classList.remove('btn-loading');
+    b.style.opacity = '';
+    b.style.pointerEvents = '';
+  });
+}, 8000);
 
 // ── TOAST ─────────────────────────────────────────────────────────────────────
 let toastTimer;
