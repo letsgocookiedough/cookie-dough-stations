@@ -678,6 +678,18 @@
   }
   #refresh-confirm.show { display: block; animation: fadeDown 0.3s ease; }
 
+
+  /* ── IOS HOVER FIX - prevent sticky hover after tap ── */
+  @media (hover: none) {
+    .add-btn:hover { background: var(--navy); border-color: var(--blue); }
+    .action-btn:hover { background: var(--navy); }
+    .dest-btn.trailer:hover { background: transparent; }
+    .dest-btn.van:hover { background: transparent; }
+    .step-btn:hover { background: var(--slate); }
+    .mode-btn:hover { border-color: var(--cream-dark); }
+    .back-btn:hover { border-color: var(--slate-light); color: var(--cream); }
+  }
+
 </style>
 </head>
 <body>
