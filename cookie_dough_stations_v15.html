@@ -537,6 +537,19 @@
     to   { opacity: 1; transform: translateY(0); }
   }
 
+
+  /* ── IPAD MINI / SMALLER TABLETS ── */
+  @media (max-width: 900px) and (orientation: landscape) {
+    .station-body {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+  @media (min-width: 900px) and (orientation: landscape) {
+    .station-body {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+
   /* ── MOBILE / PHONE RESPONSIVE ── */
   @media (max-width: 700px) {
 
@@ -801,8 +814,8 @@ const STATIONS = {
   premix:  { title: "Pre Mix",   subtitle: "Add qty to Pre Mix",        icon: '🥣' },
   mix:     { title: "Mix Table", subtitle: "Pre Mix → Freezer",         icon: '🔄' },
   freezer: { title: "Freezer",   subtitle: "Freezer → Van or Trailer",  icon: '🧊' },
-  trailer: { title: "Trailer",   subtitle: "Trailer → Trailer Used",    icon: '🚚' },
-  van:     { title: "Van",       subtitle: "Van → Van Used",             icon: '🚐' },
+  trailer: { title: "Trailer",   subtitle: "Trailer → Make Table",       icon: '🚚' },
+  van:     { title: "Van",       subtitle: "Van → Make Table",           icon: '🚐' },
 };
 
 let stockCache = {};
@@ -1013,7 +1026,7 @@ function buildAndRender(mode) {
           </button>
         </div>`;
     } else {
-      const labels = { mix:['Pre Mix','Freezer'], trailer:['Trailer','Trailer Used'], van:['Van','Van Used'] };
+      const labels = { mix:['Pre Mix','Freezer'], trailer:['Trailer','Make Table'], van:['Van','Make Table'] };
       const [from, to] = labels[mode];
       inner = `
         <div class="qty-row">
@@ -1039,7 +1052,8 @@ function buildAndRender(mode) {
 function stepQty(key, delta) {
   const input = document.getElementById(`qty-${key}`);
   if (!input) return;
-  input.value = Math.max(-999, (parseInt(input.value) || 1) + delta);
+  const current = parseInt(input.value);
+  input.value = Math.max(-999, (isNaN(current) ? 1 : current) + delta);
 }
 
 function selectQty(el) {
