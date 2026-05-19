@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Let's Go Cookie Dough — Production</title>
 <link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 <style>
@@ -360,9 +360,10 @@
     background: var(--slate);
     border: none;
     color: var(--cream);
-    width: 48px;
-    height: 56px;
-    font-size: 24px;
+    touch-action: manipulation;
+    width: 58px;
+    height: 68px;
+    font-size: 28px;
     font-weight: 900;
     cursor: pointer;
     transition: background 0.12s;
@@ -375,11 +376,11 @@
     border: none;
     color: var(--cream);
     font-family: 'Nunito', sans-serif;
-    font-size: 22px;
+    font-size: 26px;
     font-weight: 900;
     text-align: center;
-    width: 64px;
-    height: 56px;
+    width: 72px;
+    height: 68px;
     outline: none;
     padding: 0 4px;
     cursor: text;
@@ -399,14 +400,15 @@
   .add-btn {
     margin-left: auto;
     background: var(--navy);
+    touch-action: manipulation;
     color: var(--cream);
     border: 2px solid var(--blue);
     border-radius: 10px;
     font-family: 'Nunito', sans-serif;
-    font-size: 18px;
+    font-size: 20px;
     font-weight: 900;
     letter-spacing: 0.5px;
-    padding: 12px 18px;
+    padding: 16px 20px;
     cursor: pointer;
     transition: all 0.15s;
     box-shadow: 0 3px 0 var(--blue-dark);
@@ -419,6 +421,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    touch-action: manipulation;
     gap: 10px;
     width: calc(100% - 28px);
     margin: 2px 14px 12px;
@@ -429,7 +432,7 @@
     border: 2px solid var(--blue);
     border-radius: 12px;
     font-family: 'Nunito', sans-serif;
-    font-size: 18px;
+    font-size: 20px;
     font-weight: 900;
     letter-spacing: 0.3px;
     cursor: pointer;
@@ -461,6 +464,7 @@
   .dest-btn {
     padding: 8px 6px;
     border: 2px solid;
+    touch-action: manipulation;
     border-radius: 12px;
     background: var(--navy);
     font-family: 'Nunito', sans-serif;
@@ -980,7 +984,7 @@ function buildAndRender(mode) {
     const stepperHtml = `
       <div class="qty-stepper">
         <button class="step-btn" onclick="stepQty('${f.row}-${mode}',-1)">−</button>
-        <input class="qty-input" type="number" min="1" max="999" value="1" id="qty-${f.row}-${mode}" inputmode="numeric" onclick="selectQty(this)" onfocus="selectQty(this)">
+        <input class="qty-input" type="number" min="-999" max="999" value="1" id="qty-${f.row}-${mode}" inputmode="numeric" onclick="selectQty(this)" onfocus="selectQty(this)">
         <button class="step-btn" onclick="stepQty('${f.row}-${mode}',1)">+</button>
       </div>`;
 
@@ -1035,7 +1039,7 @@ function buildAndRender(mode) {
 function stepQty(key, delta) {
   const input = document.getElementById(`qty-${key}`);
   if (!input) return;
-  input.value = Math.max(1, (parseInt(input.value) || 1) + delta);
+  input.value = Math.max(-999, (parseInt(input.value) || 1) + delta);
 }
 
 function selectQty(el) {
@@ -1160,7 +1164,7 @@ async function fireAction(mode, flavor, row, destination) {
 
     if (resp.ok || resp.status === 202) {
       const destLabel = destination ? ` → ${destination}` : '';
-      const qtyLabel = qty > 1 ? ` ×${qty}` : '';
+      const qtyLabel = qty !== 1 ? ` ×${qty}` : '';
       showToast(`${flavor}${destLabel}${qtyLabel} — done! 🍪`, 'success');
 
       // Reset stepper to 1
