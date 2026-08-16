@@ -73,35 +73,73 @@
     font-size:13px; font-weight:700; letter-spacing:.04em; color:var(--sky);
   }
 
+  /* ---------- layout ---------- */
+  #appLayout{display:flex; align-items:flex-start;}
+  #menuArea{flex:1; min-width:0;}
+
   /* ---------- menu ---------- */
-  main{max-width:640px; margin:0 auto; padding:10px 16px 160px;}
-  .menuGrid{display:grid; grid-template-columns:1fr; gap:12px; margin-top:18px;}
+  main{max-width:900px; margin:0 auto; padding:10px 16px 160px;}
+  .menuGrid{
+    display:grid; grid-template-columns:repeat(auto-fill, minmax(240px,1fr));
+    gap:18px; margin-top:18px;
+  }
   .item{
-    display:flex; align-items:center; gap:14px;
-    background:var(--dough-2); border:1px solid var(--line); border-radius:16px;
-    padding:14px 18px;
+    display:flex; flex-direction:column; overflow:hidden;
+    background:var(--dough-2); border:1px solid var(--line); border-radius:18px;
   }
   .item .thumb{
-    width:56px; height:56px; border-radius:12px; flex-shrink:0;
+    width:100%; aspect-ratio:4/3;
     background-size:cover; background-position:center;
     background-color:rgba(217,153,61,0.18);
     display:flex; align-items:center; justify-content:center;
-    font-family:'Fredoka',sans-serif; font-weight:700; font-size:20px; color:var(--butter);
-    border:1px solid var(--line);
+    font-family:'Fredoka',sans-serif; font-weight:700; font-size:44px; color:var(--butter);
   }
-  .item .info{flex:1; min-width:0;}
-  .item .info .name{font-family:'Fredoka',sans-serif; font-size:19px; font-weight:600;}
-  .item .info .price{font-size:14px; opacity:.65; margin-top:2px;}
-  .item .info .ingredients{font-size:11px; opacity:.45; margin-top:4px; line-height:1.4;}
-  .stepper{display:flex; align-items:center; gap:10px;}
+  .item .info{padding:14px 16px 6px;}
+  .item .info .name{font-family:'Fredoka',sans-serif; font-size:22px; font-weight:600;}
+  .item .info .price{font-size:16px; opacity:.7; margin-top:3px;}
+  .item .info .ingredients{font-size:12px; opacity:.5; margin-top:6px; line-height:1.45;}
+  .stepper{display:flex; align-items:center; justify-content:space-between; padding:10px 16px 16px;}
   .stepper button{
-    width:38px; height:38px; border-radius:10px; border:none; cursor:pointer;
-    background:rgba(247,241,227,0.1); color:var(--cream); font-size:20px; font-weight:700;
+    width:42px; height:42px; border-radius:10px; border:none; cursor:pointer;
+    background:rgba(247,241,227,0.1); color:var(--cream); font-size:22px; font-weight:700;
   }
-  .stepper button.plus{background:var(--butter); color:var(--dough);}
-  .stepper .qty{min-width:22px; text-align:center; font-weight:800; font-size:16px;}
+  .stepper button.plus{background:var(--butter); color:var(--ink);}
+  .stepper .qty{min-width:26px; text-align:center; font-weight:800; font-size:19px;}
 
-  /* ---------- cart bar ---------- */
+  /* ---------- persistent cart sidebar (wide screens) ---------- */
+  #cartPanel{
+    display:none; flex-direction:column;
+    width:340px; flex-shrink:0; height:100vh; position:sticky; top:0;
+    background:var(--dough-2); border-left:1px solid var(--line);
+    padding:80px 22px 22px; overflow-y:auto;
+  }
+  #cartPanel h2{margin:0 0 16px; font-size:22px; color:var(--cream);}
+  #cartPanelEmpty{opacity:.5; font-size:14px; margin-top:6px;}
+  .cartLine{
+    display:flex; align-items:center; gap:10px; padding:12px 0; border-bottom:1px solid var(--line);
+  }
+  .cartLine .cartLineName{flex:1; font-size:15px; font-weight:700;}
+  .cartLine .cartLineControls{display:flex; align-items:center; gap:8px;}
+  .cartLine .cartLineControls button{
+    width:28px; height:28px; border-radius:8px; border:none; cursor:pointer;
+    background:rgba(247,241,227,0.1); color:var(--cream); font-size:16px; font-weight:700;
+  }
+  .cartLine .cartLinePrice{font-size:14px; opacity:.75; min-width:48px; text-align:right;}
+  #cartPanelFooter{margin-top:auto; padding-top:16px;}
+  #cartPanelFooter .row{display:flex; justify-content:space-between; font-size:17px; margin-bottom:14px;}
+  #cartPanelFooter .row span:last-child{font-family:'Fredoka',sans-serif; color:var(--butter); font-size:22px;}
+  #cartPanelFooter button{
+    width:100%; background:var(--butter); color:var(--ink); border:none; border-radius:14px;
+    padding:16px; font-size:16px; font-weight:800; font-family:'Fredoka',sans-serif; cursor:pointer;
+  }
+
+  @media (min-width:900px){
+    #cartPanel{display:flex;}
+    #cartBar{display:none !important;}
+    main{padding-bottom:60px;}
+  }
+
+  /* ---------- cart bar (narrow screens) ---------- */
   #cartBar{
     position:fixed; bottom:0; left:0; right:0; z-index:40;
     background:var(--dough-2); border-top:1px solid var(--line);
@@ -215,9 +253,23 @@
   <span class="truckTag" id="truckTag">VAN</span>
 </header>
 
-<main>
-  <div class="menuGrid" id="menuGrid"></div>
-</main>
+<div id="appLayout">
+  <div id="menuArea">
+    <main>
+      <div class="menuGrid" id="menuGrid"></div>
+    </main>
+  </div>
+
+  <aside id="cartPanel">
+    <h2>Your Order</h2>
+    <div id="cartPanelItems"></div>
+    <div id="cartPanelEmpty">Nothing yet — tap + on any item to add it.</div>
+    <div id="cartPanelFooter">
+      <div class="row"><span>Total</span><span id="cartPanelTotal">$0.00</span></div>
+      <button onclick="checkAllergensAndProceed()">Checkout</button>
+    </div>
+  </aside>
+</div>
 
 <div id="cartBar">
   <div class="row">
@@ -360,6 +412,36 @@ function updateCartBar(){
   const bar = document.getElementById('cartBar');
   document.getElementById('cartTotal').textContent = '$'+total.toFixed(2);
   bar.classList.toggle('visible', total > 0);
+  renderCartPanel();
+}
+
+function renderCartPanel(){
+  const wrap = document.getElementById('cartPanelItems');
+  const empty = document.getElementById('cartPanelEmpty');
+  const entries = Object.entries(cart);
+
+  if(entries.length === 0){
+    wrap.innerHTML = '';
+    empty.style.display = 'block';
+  } else {
+    empty.style.display = 'none';
+    wrap.innerHTML = entries.map(([id,qty])=>{
+      const item = MENU.find(m=>m.id===id);
+      if(!item) return '';
+      return `
+        <div class="cartLine">
+          <div class="cartLineName">${escapeHtml(item.name)}</div>
+          <div class="cartLineControls">
+            <button onclick="changeQty('${id}', -1)">−</button>
+            <span>${qty}</span>
+            <button onclick="changeQty('${id}', 1)">+</button>
+          </div>
+          <div class="cartLinePrice">$${(item.price*qty).toFixed(2)}</div>
+        </div>
+      `;
+    }).join('');
+  }
+  document.getElementById('cartPanelTotal').textContent = '$'+cartTotalAmount().toFixed(2);
 }
 
 function showOverlay(html){
