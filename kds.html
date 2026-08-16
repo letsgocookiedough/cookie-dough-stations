@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Let's Go Cookie Dough — Kitchen</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@400;600;700;800&family=Special+Elite&display=swap');
+
+  :root{
+    --dough:#2C1D19;
+    --rail:#1B1210;
+    --cream:#FFF8ED;
+    --paper:#FBF4E4;
+    --paper-shadow: rgba(0,0,0,0.35);
+    --butter:#E8B84B;
+    --jam:#C1442E;
+    --ok:#5B8C5A;
+    --line: rgba(255,248,237,0.14);
+    --ink:#2C1D19;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--dough); color:var(--cream);
+    font-family:'Nunito',sans-serif; overflow-x:hidden; min-height:100vh;
+  }
+  h1,h2,.display{font-family:'Fredoka',sans-serif;}
+
+  /* ---------- config ---------- */
+  #configBtn{
+    position:fixed; top:10px; right:10px; z-index:50;
+    width:34px; height:34px; border-radius:50%;
+    background:rgba(255,248,237,0.08); border:1px solid var(--line);
+    color:var(--cream); font-size:16px; cursor:pointer;
+  }
+  #configPanel{
+    position:fixed; top:0; right:0; height:100%; width:320px; max-width:88vw;
+    background:#241813; border-left:1px solid var(--line);
+    transform:translateX(100%); transition:transform .25s ease;
+    z-index:49; padding:60px 20px 20px; overflow-y:auto;
+  }
+  #configPanel.open{transform:translateX(0);}
+  #configPanel label{display:block; font-size:12px; opacity:.75; margin:14px 0 4px;}
+  #configPanel input, #configPanel select{
+    width:100%; padding:8px 10px; border-radius:8px; border:1px solid var(--line);
+    background:rgba(255,248,237,0.06); color:var(--cream); font-size:14px;
+  }
+  #configPanel .savedNote{font-size:12px; color:var(--ok); margin-top:10px; display:none;}
+
+  /* ---------- header / tabs ---------- */
+  header{padding:20px 20px 0; text-align:center;}
+  header .eyebrow{font-size:11px; letter-spacing:.14em; text-transform:uppercase; opacity:.55;}
+  header h1{font-size:26px; margin:2px 0 14px; color:var(--butter);}
+
+  #tabs{display:flex; justify-content:center; gap:8px; padding:0 16px 16px; flex-wrap:wrap;}
+  #tabs button{
+    background:rgba(255,248,237,0.06); border:1px solid var(--line); color:var(--cream);
+    padding:10px 18px; border-radius:24px; font-size:14px; font-weight:700; cursor:pointer;
+    font-family:'Nunito',sans-serif;
+  }
+  #tabs button.active{background:var(--butter); color:var(--ink); border-color:var(--butter);}
+  #tabs button .count{
+    display:inline-block; margin-left:6px; background:rgba(0,0,0,0.2);
+    border-radius:10px; padding:1px 7px; font-size:12px;
+  }
+  #tabs button.active .count{background:rgba(0,0,0,0.15);}
+
+  /* ---------- rail ---------- */
+  #railWrap{position:relative; padding:36px 0 40px;}
+  #railWrap::before{
+    content:''; position:absolute; top:20px; left:0; right:0; height:6px;
+    background:linear-gradient(180deg,#4a3229,#241813);
+    box-shadow:0 2px 6px rgba(0,0,0,0.5);
+  }
+  #rail{
+    display:flex; gap:26px; overflow-x:auto; padding:0 30px 20px;
+    scroll-snap-type:x proximity;
+  }
+  .ticket{
+    scroll-snap-align:start;
+    flex:0 0 220px; background:var(--paper); color:var(--ink);
+    border-radius:2px; padding:16px 14px 14px; position:relative;
+    box-shadow:0 10px 18px var(--paper-shadow);
+    font-family:'Special Elite',monospace;
+  }
+  .ticket::before{
+    content:''; position:absolute; top:-20px; left:50%; transform:translateX(-50%);
+    width:10px; height:10px; border-radius:50%;
+    background:#8a8a8a; box-shadow:0 -18px 0 -2px #8a8a8a, inset 0 1px 2px rgba(0,0,0,0.4);
+  }
+  .ticket::after{
+    content:''; position:absolute; top:-14px; left:50%; transform:translateX(-50%);
+    width:2px; height:14px; background:#8a8a8a;
+  }
+  .ticket .jagged{
+    position:absolute; top:0; left:0; right:0; height:8px;
+    background:
+      linear-gradient(135deg, var(--paper) 50%, transparent 50%) 0 0/10px 10px,
+      linear-gradient(-135deg, var(--paper) 50%, transparent 50%) 0 0/10px 10px;
+    background-color:var(--dough);
+  }
+  .ticket .ttop{display:flex; justify-content:space-between; align-items:baseline; margin-top:6px;}
+  .ticket .tname{font-size:16px; font-weight:700;}
+  .ticket .ttruck{font-size:10px; text-transform:uppercase; letter-spacing:.06em; opacity:.6;}
+  .ticket .telapsed{font-size:11px; margin:2px 0 10px; opacity:.65;}
+  .ticket .telapsed.warn{color:var(--jam); font-weight:700;}
+  .ticket hr{border:none; border-top:1px dashed rgba(44,29,25,0.3); margin:8px 0;}
+  .ticket .litem{display:flex; justify-content:space-between; font-size:13px; padding:2px 0;}
+  .ticket .litem .q{font-weight:700; margin-right:6px;}
+  .ticket .bumpBtn{
+    margin-top:12px; width:100%; padding:11px; border:none; border-radius:6px;
+    background:var(--ok); color:#fff; font-family:'Nunito',sans-serif; font-weight:800;
+    font-size:14px; letter-spacing:.03em; cursor:pointer;
+  }
+  .ticket .bumpBtn:active{opacity:.8;}
+  .ticket .doneStamp{
+    position:absolute; top:34%; left:50%; transform:translate(-50%,-50%) rotate(-14deg);
+    border:3px solid var(--ok); color:var(--ok); font-family:'Fredoka',sans-serif;
+    font-weight:700; font-size:20px; padding:4px 14px; border-radius:6px; opacity:.85;
+  }
+  .ticket .doneTime{font-size:10px; opacity:.55; margin-top:8px;}
+
+  #emptyState{
+    text-align:center; opacity:.5; padding:40px 20px; font-size:14px;
+  }
+
+  /* ---------- totals ---------- */
+  #totalsView{max-width:480px; margin:0 auto; padding:10px 20px 60px; display:none;}
+  #totalsView .statRow{
+    display:flex; justify-content:space-between; padding:14px 4px;
+    border-bottom:1px solid var(--line); font-size:15px;
+  }
+  #totalsView .statRow .name{font-weight:700;}
+  #totalsView .statRow .qty{color:var(--butter); font-family:'Fredoka',sans-serif; font-size:17px;}
+  #totalsView .summaryCard{
+    background:rgba(255,248,237,0.06); border:1px solid var(--line); border-radius:14px;
+    padding:16px 18px; margin-bottom:20px; display:flex; justify-content:space-between;
+  }
+  #totalsView .summaryCard .big{font-family:'Fredoka',sans-serif; font-size:26px; color:var(--butter);}
+  #totalsView .summaryCard .label{font-size:11px; opacity:.6; text-transform:uppercase; letter-spacing:.06em;}
+</style>
+</head>
+<body>
+
+<button id="configBtn" onclick="document.getElementById('configPanel').classList.toggle('open')">⚙</button>
+<div id="configPanel">
+  <h3 style="margin:0 0 4px;">Setup</h3>
+  <p style="font-size:12px; opacity:.6; margin:0;">Saved to this device's browser only.</p>
+
+  <label>Supabase Project URL</label>
+  <input id="cfgSupaUrl" placeholder="https://xxxxx.supabase.co">
+
+  <label>Supabase Publishable Key</label>
+  <input id="cfgSupaKey" placeholder="sb_publishable_...">
+
+  <label>Power Automate — Bump Order Flow URL</label>
+  <input id="cfgBumpUrl" placeholder="https://prod-xx...invoke?...">
+
+  <label>Truck</label>
+  <select id="cfgTruck">
+    <option value="all">All</option>
+    <option value="van">Van</option>
+    <option value="trailer">Trailer</option>
+  </select>
+
+  <button onclick="saveConfig()" style="margin-top:18px; width:100%; padding:10px; border-radius:8px; border:none; background:var(--butter); color:var(--ink); font-weight:800; cursor:pointer;">Save</button>
+  <div class="savedNote" id="savedNote">Saved ✓</div>
+</div>
+
+<header>
+  <div class="eyebrow">Let's Go Cookie Dough</div>
+  <h1>Kitchen</h1>
+</header>
+
+<div id="tabs">
+  <button id="tabOpen" class="active" onclick="switchTab('open')">Open Orders<span class="count" id="openCount">0</span></button>
+  <button id="tabDone" onclick="switchTab('done')">Completed<span class="count" id="doneCount">0</span></button>
+  <button id="tabTotals" onclick="switchTab('totals')">Today's Totals</button>
+</div>
+
+<div id="railWrap">
+  <div id="rail"></div>
+  <div id="emptyState" style="display:none;"></div>
+</div>
+
+<div id="totalsView"></div>
+
+<script>
+const MENU_NAMES = {
+  chocolate_chip: 'Chocolate Chip',
+  sugar: 'Sugar Cookie',
+  snickerdoodle: 'Snickerdoodle',
+  birthday_cake: 'Birthday Cake',
+  brownie_batter: 'Brownie Batter'
+};
+
+let config = { supaUrl:'', supaKey:'', bumpUrl:'', truck:'all' };
+let activeTab = 'open';
+let allOrders = [];
+let pollTimer = null;
+const POLL_INTERVAL = 4000;
+
+function saveConfig(){
+  config.supaUrl = document.getElementById('cfgSupaUrl').value.trim().replace(/\/$/,'');
+  config.supaKey = document.getElementById('cfgSupaKey').value.trim();
+  config.bumpUrl = document.getElementById('cfgBumpUrl').value.trim();
+  config.truck   = document.getElementById('cfgTruck').value;
+  try{ localStorage.setItem('lgcd-kds-config', JSON.stringify(config)); } catch(e){}
+  const note = document.getElementById('savedNote');
+  note.style.display = 'block';
+  setTimeout(()=> note.style.display='none', 1500);
+  fetchOrders();
+}
+
+function loadConfig(){
+  try{
+    const saved = localStorage.getItem('lgcd-kds-config');
+    if(!saved) return;
+    config = { ...config, ...JSON.parse(saved) };
+    document.getElementById('cfgSupaUrl').value = config.supaUrl || '';
+    document.getElementById('cfgSupaKey').value = config.supaKey || '';
+    document.getElementById('cfgBumpUrl').value = config.bumpUrl || '';
+    document.getElementById('cfgTruck').value = config.truck || 'all';
+  } catch(e){}
+}
+
+function switchTab(tab){
+  activeTab = tab;
+  document.getElementById('tabOpen').classList.toggle('active', tab==='open');
+  document.getElementById('tabDone').classList.toggle('active', tab==='done');
+  document.getElementById('tabTotals').classList.toggle('active', tab==='totals');
+  document.getElementById('railWrap').style.display = (tab==='totals') ? 'none' : 'block';
+  document.getElementById('totalsView').style.display = (tab==='totals') ? 'block' : 'none';
+  render();
+}
+
+function startOfTodayISO(){
+  const d = new Date();
+  d.setHours(0,0,0,0);
+  return d.toISOString();
+}
+
+async function fetchOrders(){
+  if(!config.supaUrl || !config.supaKey) return;
+  try{
+    const since = startOfTodayISO();
+    let url = `${config.supaUrl}/rest/v1/orders?created_at=gte.${since}&status=in.(paid,done)&order=created_at.asc&select=*`;
+    const res = await fetch(url, {
+      headers:{ 'apikey': config.supaKey, 'Authorization': 'Bearer '+config.supaKey }
+    });
+    if(!res.ok) return;
+    allOrders = await res.json();
+    render();
+  } catch(e){ /* transient network hiccup, next poll retries */ }
+}
+
+function filteredByTruck(list){
+  if(config.truck === 'all') return list;
+  return list.filter(o => o.truck === config.truck);
+}
+
+function elapsedLabel(createdAt){
+  const mins = Math.max(0, Math.floor((Date.now() - new Date(createdAt).getTime())/60000));
+  if(mins < 1) return 'just now';
+  return mins + ' min ago';
+}
+
+function escapeHtml(str){
+  const d = document.createElement('div');
+  d.textContent = str || '';
+  return d.innerHTML;
+}
+
+function renderItems(items){
+  return Object.entries(items || {}).map(([id,qty]) => `
+    <div class="litem"><span><span class="q">${qty}×</span>${escapeHtml(MENU_NAMES[id] || id)}</span></div>
+  `).join('');
+}
+
+function render(){
+  const open = filteredByTruck(allOrders.filter(o => o.status === 'paid'))
+                .sort((a,b)=> new Date(a.created_at) - new Date(b.created_at));
+  const done = filteredByTruck(allOrders.filter(o => o.status === 'done'))
+                .sort((a,b)=> new Date(b.completed_at || b.created_at) - new Date(a.completed_at || a.created_at));
+
+  document.getElementById('openCount').textContent = open.length;
+  document.getElementById('doneCount').textContent = done.length;
+
+  if(activeTab === 'totals'){ renderTotals(open.concat(done)); return; }
+
+  const list = activeTab === 'open' ? open : done;
+  const rail = document.getElementById('rail');
+  const empty = document.getElementById('emptyState');
+
+  if(list.length === 0){
+    rail.innerHTML = '';
+    empty.style.display = 'block';
+    empty.textContent = activeTab === 'open' ? 'No open orders right now.' : 'Nothing completed yet today.';
+    return;
+  }
+  empty.style.display = 'none';
+
+  rail.innerHTML = list.map(o => {
+    const isOpen = o.status === 'paid';
+    const mins = Math.floor((Date.now() - new Date(o.created_at).getTime())/60000);
+    const warnClass = (isOpen && mins >= 10) ? 'warn' : '';
+    return `
+      <div class="ticket">
+        <div class="jagged"></div>
+        <div class="ttop">
+          <div class="tname">${escapeHtml(o.customer_name || 'Guest')}</div>
+          <div class="ttruck">${escapeHtml(o.truck || '')}</div>
+        </div>
+        <div class="telapsed ${warnClass}">${isOpen ? elapsedLabel(o.created_at) : 'placed ' + elapsedLabel(o.created_at)}</div>
+        <hr>
+        ${renderItems(o.items)}
+        ${isOpen ? `<button class="bumpBtn" onclick="bumpOrder('${o.id}', this)">Bump — Ready</button>` : `
+          <div class="doneStamp">DONE</div>
+          <div class="doneTime">completed ${o.completed_at ? elapsedLabel(o.completed_at) : ''}</div>
+        `}
+      </div>
+    `;
+  }).join('');
+}
+
+function renderTotals(orders){
+  const totals = {};
+  let revenue = 0;
+  orders.forEach(o => {
+    revenue += Number(o.total_amount || 0);
+    Object.entries(o.items || {}).forEach(([id,qty]) => {
+      totals[id] = (totals[id] || 0) + Number(qty);
+    });
+  });
+  const rows = Object.entries(totals).sort((a,b)=> b[1]-a[1]);
+
+  const view = document.getElementById('totalsView');
+  view.innerHTML = `
+    <div class="summaryCard">
+      <div><div class="label">Orders Today</div><div class="big">${orders.length}</div></div>
+      <div><div class="label">Revenue</div><div class="big">$${revenue.toFixed(2)}</div></div>
+    </div>
+    ${rows.length === 0 ? '<div id="emptyState" style="display:block;">Nothing sold yet today.</div>' :
+      rows.map(([id,qty]) => `
+        <div class="statRow">
+          <div class="name">${escapeHtml(MENU_NAMES[id] || id)}</div>
+          <div class="qty">${qty}</div>
+        </div>
+      `).join('')
+    }
+  `;
+}
+
+async function bumpOrder(orderId, btnEl){
+  if(!config.bumpUrl){ alert('Set the Bump Order Flow URL in setup first.'); return; }
+  btnEl.disabled = true;
+  btnEl.textContent = 'Bumping...';
+  try{
+    const res = await fetch(config.bumpUrl, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ order_id: orderId })
+    });
+    if(!res.ok) throw new Error();
+    await fetchOrders();
+  } catch(e){
+    btnEl.disabled = false;
+    btnEl.textContent = 'Bump — Ready (retry)';
+  }
+}
+
+loadConfig();
+fetchOrders();
+pollTimer = setInterval(fetchOrders, POLL_INTERVAL);
+</script>
+</body>
+</html>
