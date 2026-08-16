@@ -8,16 +8,17 @@
   @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@400;600;700;800&family=Special+Elite&display=swap');
 
   :root{
-    --dough:#2C1D19;
-    --rail:#1B1210;
-    --cream:#FFF8ED;
+    --dough:#454A5E;
+    --rail:#343849;
+    --cream:#F7F1E3;
     --paper:#FBF4E4;
     --paper-shadow: rgba(0,0,0,0.35);
-    --butter:#E8B84B;
+    --butter:#D9993D;
+    --sky:#8FC1DE;
     --jam:#C1442E;
     --ok:#5B8C5A;
-    --line: rgba(255,248,237,0.14);
-    --ink:#2C1D19;
+    --line: rgba(247,241,227,0.14);
+    --ink:#1B2430;
   }
   *{box-sizing:border-box;}
   body{
@@ -30,13 +31,13 @@
   #configBtn{
     position:fixed; top:10px; right:10px; z-index:50;
     width:34px; height:34px; border-radius:50%;
-    background:rgba(255,248,237,0.08); border:1px solid var(--line);
+    background:rgba(247,241,227,0.08); border:1px solid var(--line);
     color:var(--cream); font-size:16px; cursor:pointer;
   }
   #soundBtn{
     position:fixed; top:10px; right:52px; z-index:50;
     width:34px; height:34px; border-radius:50%;
-    background:rgba(255,248,237,0.08); border:1px solid var(--line);
+    background:rgba(247,241,227,0.08); border:1px solid var(--line);
     color:var(--cream); font-size:16px; cursor:pointer;
   }
   #soundBtn.muted{opacity:.4;}
@@ -50,18 +51,23 @@
   #configPanel label{display:block; font-size:12px; opacity:.75; margin:14px 0 4px;}
   #configPanel input, #configPanel select{
     width:100%; padding:8px 10px; border-radius:8px; border:1px solid var(--line);
-    background:rgba(255,248,237,0.06); color:var(--cream); font-size:14px;
+    background:rgba(247,241,227,0.06); color:var(--cream); font-size:14px;
   }
   #configPanel .savedNote{font-size:12px; color:var(--ok); margin-top:10px; display:none;}
 
   /* ---------- header / tabs ---------- */
   header{padding:20px 20px 0; text-align:center;}
   header .eyebrow{font-size:11px; letter-spacing:.14em; text-transform:uppercase; opacity:.55;}
-  header h1{font-size:26px; margin:2px 0 14px; color:var(--butter);}
+  header h1{
+    font-size:26px; margin:2px 0 14px; color:var(--cream);
+    text-shadow:
+      -1.5px -1.5px 0 var(--ink), 1.5px -1.5px 0 var(--ink), -1.5px 1.5px 0 var(--ink), 1.5px 1.5px 0 var(--ink),
+      0 3px 0 var(--sky);
+  }
 
   #tabs{display:flex; justify-content:center; gap:8px; padding:0 16px 16px; flex-wrap:wrap;}
   #tabs button{
-    background:rgba(255,248,237,0.06); border:1px solid var(--line); color:var(--cream);
+    background:rgba(247,241,227,0.06); border:1px solid var(--line); color:var(--cream);
     padding:10px 18px; border-radius:24px; font-size:14px; font-weight:700; cursor:pointer;
     font-family:'Nunito',sans-serif;
   }
@@ -125,6 +131,12 @@
     border:3px solid var(--ok); color:var(--ok); font-family:'Fredoka',sans-serif;
     font-weight:700; font-size:20px; padding:4px 14px; border-radius:6px; opacity:.85;
   }
+  .ticket .cashFlag{
+    background:var(--jam); color:#fff; font-family:'Nunito',sans-serif; font-weight:800;
+    font-size:14px; line-height:1.3; text-align:center; padding:8px 6px;
+    border-radius:8px; margin:6px 0 12px; letter-spacing:.02em;
+    box-shadow:0 2px 6px rgba(193,68,46,0.4);
+  }
   .ticket .doneTime{font-size:10px; opacity:.55; margin-top:8px;}
 
   #emptyState{
@@ -140,7 +152,7 @@
   #totalsView .statRow .name{font-weight:700;}
   #totalsView .statRow .qty{color:var(--butter); font-family:'Fredoka',sans-serif; font-size:17px;}
   #totalsView .summaryCard{
-    background:rgba(255,248,237,0.06); border:1px solid var(--line); border-radius:14px;
+    background:rgba(247,241,227,0.06); border:1px solid var(--line); border-radius:14px;
     padding:16px 18px; margin-bottom:20px; display:flex; justify-content:space-between;
   }
   #totalsView .summaryCard .big{font-family:'Fredoka',sans-serif; font-size:26px; color:var(--butter);}
@@ -194,13 +206,7 @@
 <div id="totalsView"></div>
 
 <script>
-const MENU_NAMES = {
-  chocolate_chip: 'Chocolate Chip',
-  sugar: 'Sugar Cookie',
-  snickerdoodle: 'Snickerdoodle',
-  birthday_cake: 'Birthday Cake',
-  brownie_batter: 'Brownie Batter'
-};
+let MENU_NAMES = {};
 
 let config = { supaUrl:'', supaKey:'', bumpUrl:'', truck:'all' };
 let activeTab = 'open';
@@ -264,19 +270,50 @@ function saveConfig(){
   const note = document.getElementById('savedNote');
   note.style.display = 'block';
   setTimeout(()=> note.style.display='none', 1500);
+  loadMenuNames();
   fetchOrders();
 }
 
 function loadConfig(){
   try{
     const saved = localStorage.getItem('lgcd-kds-config');
-    if(!saved) return;
-    config = { ...config, ...JSON.parse(saved) };
-    document.getElementById('cfgSupaUrl').value = config.supaUrl || '';
-    document.getElementById('cfgSupaKey').value = config.supaKey || '';
-    document.getElementById('cfgBumpUrl').value = config.bumpUrl || '';
-    document.getElementById('cfgTruck').value = config.truck || 'all';
+    if(saved) config = { ...config, ...JSON.parse(saved) };
   } catch(e){}
+
+  // URL param locks this physical device to one truck — e.g. kds.html?truck=van
+  // Prevents ever showing the wrong vehicle's orders on a device that should only show one.
+  const params = new URLSearchParams(window.location.search);
+  const urlTruck = params.get('truck');
+  if(urlTruck === 'van' || urlTruck === 'trailer') config.truck = urlTruck;
+
+  document.getElementById('cfgSupaUrl').value = config.supaUrl || '';
+  document.getElementById('cfgSupaKey').value = config.supaKey || '';
+  document.getElementById('cfgBumpUrl').value = config.bumpUrl || '';
+  document.getElementById('cfgTruck').value = config.truck || 'all';
+
+  if(urlTruck === 'van' || urlTruck === 'trailer'){
+    const sel = document.getElementById('cfgTruck');
+    sel.disabled = true;
+    sel.title = 'Locked via URL for this device';
+    const banner = document.createElement('div');
+    banner.style.cssText = 'font-size:11px; color:var(--butter); margin-top:6px;';
+    banner.textContent = '🔒 Locked to ' + urlTruck.toUpperCase() + ' for this device';
+    sel.insertAdjacentElement('afterend', banner);
+  }
+}
+
+async function loadMenuNames(){
+  if(!config.supaUrl || !config.supaKey) return;
+  try{
+    const res = await fetch(`${config.supaUrl}/rest/v1/menu_items?select=id,name`, {
+      headers:{ 'apikey': config.supaKey, 'Authorization': 'Bearer '+config.supaKey }
+    });
+    if(!res.ok) return;
+    const rows = await res.json();
+    MENU_NAMES = {};
+    rows.forEach(r => MENU_NAMES[r.id] = r.name);
+    render();
+  } catch(e){ /* falls back to showing raw item ids if this fails */ }
 }
 
 function switchTab(tab){
@@ -366,11 +403,13 @@ function render(){
 
   rail.innerHTML = list.map(o => {
     const isOpen = o.status === 'paid';
+    const isCash = o.payment_method === 'cash';
     const mins = Math.floor((Date.now() - new Date(o.created_at).getTime())/60000);
     const warnClass = (isOpen && mins >= 10) ? 'warn' : '';
     return `
       <div class="ticket">
         <div class="jagged"></div>
+        ${isOpen && isCash ? `<div class="cashFlag">💵 CASH DUE<br>$${Number(o.total_amount).toFixed(2)}</div>` : ''}
         <div class="ttop">
           <div class="tname">${escapeHtml(o.customer_name || 'Guest')}</div>
           <div class="ttruck">${escapeHtml(o.truck || '')}</div>
@@ -389,9 +428,13 @@ function render(){
 
 function renderTotals(orders){
   const totals = {};
-  let revenue = 0;
+  let revenue = 0, taxCollected = 0, tipsCollected = 0, cashTotal = 0, cardTotal = 0;
   orders.forEach(o => {
     revenue += Number(o.total_amount || 0);
+    taxCollected += Number(o.tax_amount || 0);
+    tipsCollected += Number(o.tip_amount || 0);
+    if(o.payment_method === 'cash') cashTotal += Number(o.total_amount || 0);
+    else cardTotal += Number(o.total_amount || 0);
     Object.entries(o.items || {}).forEach(([id,qty]) => {
       totals[id] = (totals[id] || 0) + Number(qty);
     });
@@ -403,6 +446,13 @@ function renderTotals(orders){
     <div class="summaryCard">
       <div><div class="label">Orders Today</div><div class="big">${orders.length}</div></div>
       <div><div class="label">Revenue</div><div class="big">$${revenue.toFixed(2)}</div></div>
+    </div>
+    <div class="summaryCard">
+      <div><div class="label">Tax Collected</div><div class="big">$${taxCollected.toFixed(2)}</div></div>
+      <div><div class="label">Tips Collected</div><div class="big">$${tipsCollected.toFixed(2)}</div></div>
+    </div>
+    <div class="summaryCard">
+      <div><div class="label">Cash / Card</div><div class="big" style="font-size:18px;">$${cashTotal.toFixed(2)} / $${cardTotal.toFixed(2)}</div></div>
     </div>
     ${rows.length === 0 ? '<div id="emptyState" style="display:block;">Nothing sold yet today.</div>' :
       rows.map(([id,qty]) => `
@@ -443,6 +493,7 @@ try{
   }
 } catch(e){}
 fetchOrders();
+loadMenuNames();
 pollTimer = setInterval(fetchOrders, POLL_INTERVAL);
 </script>
 </body>
