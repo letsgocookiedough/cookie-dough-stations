@@ -134,6 +134,8 @@
     padding-bottom:16px; margin-bottom:6px; border-bottom:1px solid var(--line);
   }
   #cartPanelFooter .row{display:flex; justify-content:space-between; font-size:17px; margin-bottom:14px;}
+  #cartPanelFooter .row.subtle{font-size:14px; opacity:.65; margin-bottom:6px;}
+  #cartPanelFooter .row.subtle span:last-child{font-family:'Nunito',sans-serif; color:inherit; font-size:14px; font-weight:600;}
   #cartPanelFooter .row span:last-child{font-family:'Fredoka',sans-serif; color:var(--butter); font-size:22px;}
   #cartPanelFooter button{
     width:100%; background:var(--butter); color:var(--ink); border:none; border-radius:14px;
@@ -182,6 +184,37 @@
   #namePrompt .skipHint{font-size:12px; opacity:.5; margin-top:16px;}
   .namePromptActions{display:flex; gap:10px; justify-content:center; margin-top:14px;}
   .namePromptActions .cancelBtn{border-color:rgba(193,68,46,0.5); color:var(--jam);}
+
+  /* ---------- payment choice ---------- */
+  #paymentChoice{max-width:480px;}
+  .paymentChoiceGrid{display:flex; gap:16px; justify-content:center; flex-wrap:wrap;}
+  .payOption{
+    width:180px; padding:28px 16px; border-radius:18px; border:2px solid var(--line);
+    background:var(--dough-2); color:var(--cream); cursor:pointer;
+    font-family:'Fredoka',sans-serif; font-size:17px; font-weight:700;
+  }
+  .payOption:active{border-color:var(--butter); background:rgba(217,153,61,0.1);}
+  .payOption .payIcon{font-size:44px; margin-bottom:10px;}
+
+  /* ---------- tip choice ---------- */
+  #tipChoice{max-width:460px;}
+  .tipGrid{display:flex; gap:12px; justify-content:center; flex-wrap:wrap; margin-bottom:18px;}
+  .tipOption{
+    width:100px; padding:18px 10px; border-radius:14px; border:2px solid var(--line);
+    background:var(--dough-2); color:var(--cream); cursor:pointer;
+    font-family:'Fredoka',sans-serif;
+  }
+  .tipOption.selected{border-color:var(--butter); background:rgba(217,153,61,0.15);}
+  .tipOption .tipPct{font-size:20px; font-weight:700;}
+  .tipOption .tipDollar{font-size:13px; opacity:.65; margin-top:4px;}
+  .tipCustomRow{
+    display:flex; align-items:center; gap:6px; justify-content:center; margin-bottom:22px;
+    font-size:18px; font-weight:700;
+  }
+  .tipCustomRow input{
+    width:140px; padding:12px 14px; border-radius:12px; border:1px solid var(--line);
+    background:var(--dough-2); color:var(--cream); font-size:16px; text-align:center;
+  }
 
   /* ---------- allergen warning ---------- */
   #allergenPrompt{max-width:720px;}
@@ -260,6 +293,9 @@
   <label>Paired Square Terminal Device ID</label>
   <input id="cfgDeviceId" placeholder="e.g. 9fa747a2-25ff-...">
 
+  <label>Sales Tax Rate (%) — set per event</label>
+  <input id="cfgTaxRate" type="number" step="0.01" placeholder="e.g. 7.5">
+
   <button onclick="saveConfig()" style="margin-top:18px; width:100%; padding:10px; border-radius:8px; border:none; background:var(--butter); color:var(--dough); font-weight:800; cursor:pointer;">Save</button>
   <div class="savedNote" id="savedNote">Saved for this session ✓</div>
 </div>
@@ -280,6 +316,8 @@
   <aside id="cartPanel">
     <h2>Your Order</h2>
     <div id="cartPanelFooter">
+      <div class="row subtle"><span>Pre-Tax Subtotal</span><span id="cartPanelSubtotal">$0.00</span></div>
+      <div class="row subtle"><span>Tax (included)</span><span id="cartPanelTax">$0.00</span></div>
       <div class="row"><span>Total</span><span id="cartPanelTotal">$0.00</span></div>
       <button onclick="checkAllergensAndProceed()">Checkout</button>
     </div>
@@ -304,7 +342,7 @@
 let MENU = [];
 
 let cart = {};       // { itemId: qty }
-let config = { supaUrl:'', supaKey:'', flowUrl:'', truck:'van', deviceId:'' };
+let config = { supaUrl:'', supaKey:'', flowUrl:'', truck:'van', deviceId:'', taxRate:0 };
 let currentOrderId = null;
 let pollTimer = null;
 let pollElapsed = 0;
@@ -317,6 +355,7 @@ function saveConfig(){
   config.flowUrl = document.getElementById('cfgFlowUrl').value.trim();
   config.truck   = document.getElementById('cfgTruck').value;
   config.deviceId = document.getElementById('cfgDeviceId').value.trim();
+  config.taxRate = Number(document.getElementById('cfgTaxRate').value) || 0;
   document.getElementById('truckTag').textContent = config.truck.toUpperCase();
 
   try{
@@ -327,6 +366,7 @@ function saveConfig(){
   note.style.display = 'block';
   setTimeout(()=> note.style.display='none', 1800);
   loadMenu();
+  updateCartBar();
 }
 
 function loadConfig(){
@@ -348,6 +388,7 @@ function loadConfig(){
   document.getElementById('cfgFlowUrl').value = config.flowUrl || '';
   document.getElementById('cfgTruck').value = config.truck || 'van';
   document.getElementById('cfgDeviceId').value = config.deviceId || '';
+  document.getElementById('cfgTaxRate').value = config.taxRate || '';
   document.getElementById('truckTag').textContent = (config.truck || 'van').toUpperCase();
 
   if(urlTruck === 'van' || urlTruck === 'trailer'){
@@ -424,8 +465,25 @@ function cartTotalAmount(){
   }, 0);
 }
 
+// Menu prices are tax-inclusive — the customer pays exactly this, nothing added.
+function grandTotal(){
+  return Math.round(cartTotalAmount() * 100) / 100;
+}
+
+// Backs the tax portion out of the inclusive price, for record-keeping only —
+// this never changes what the customer is charged.
+function preTaxSubtotal(){
+  const rate = Number(config.taxRate)||0;
+  if(rate <= 0) return grandTotal();
+  return Math.round((grandTotal() / (1 + rate/100)) * 100) / 100;
+}
+
+function taxAmount(){
+  return Math.round((grandTotal() - preTaxSubtotal()) * 100) / 100;
+}
+
 function updateCartBar(){
-  const total = cartTotalAmount();
+  const total = grandTotal();
   const bar = document.getElementById('cartBar');
   document.getElementById('cartTotal').textContent = '$'+total.toFixed(2);
   bar.classList.toggle('visible', total > 0);
@@ -458,7 +516,9 @@ function renderCartPanel(){
       `;
     }).join('');
   }
-  document.getElementById('cartPanelTotal').textContent = '$'+cartTotalAmount().toFixed(2);
+  document.getElementById('cartPanelSubtotal').textContent = '$'+preTaxSubtotal().toFixed(2);
+  document.getElementById('cartPanelTax').textContent = '$'+taxAmount().toFixed(2);
+  document.getElementById('cartPanelTotal').textContent = '$'+grandTotal().toFixed(2);
 }
 
 function showOverlay(html){
@@ -519,7 +579,7 @@ function showNamePrompt(){
         <button class="ghostBtn" onclick="hideOverlay()">Go Back</button>
         <button class="ghostBtn cancelBtn" onclick="resetKiosk()">Cancel Order</button>
       </div>
-      <div class="skipHint">$${total.toFixed(2)} total</div>
+      <div class="skipHint">$${grandTotal().toFixed(2)} total (incl. tax)</div>
     </div>
   `);
 
@@ -535,15 +595,156 @@ function confirmName(){
   const input = document.getElementById('nameInput');
   const customerName = input.value.trim();
   if(!customerName) return;
-  placeOrder(customerName);
+  showPaymentChoice(customerName);
 }
 
-async function placeOrder(customerName){
+function showPaymentChoice(customerName){
+  showOverlay(`
+    <div id="paymentChoice">
+      <h2 style="margin-bottom:6px;">How would you like to pay, ${escapeHtml(customerName)}?</h2>
+      <p style="margin-bottom:24px;">$${grandTotal().toFixed(2)} total (incl. tax)</p>
+      <div class="paymentChoiceGrid">
+        <button class="payOption" onclick="showTipChoice('${escapeHtml(customerName).replace(/'/g,"\\'")}')">
+          <div class="payIcon">💳</div>
+          <div>Pay by Card</div>
+        </button>
+        <button class="payOption" onclick="placeCashOrder('${escapeHtml(customerName).replace(/'/g,"\\'")}')">
+          <div class="payIcon">💵</div>
+          <div>Pay Cash at Pickup</div>
+        </button>
+      </div>
+      <div class="namePromptActions">
+        <button class="ghostBtn" onclick="hideOverlay()">Go Back</button>
+        <button class="ghostBtn cancelBtn" onclick="resetKiosk()">Cancel Order</button>
+      </div>
+    </div>
+  `);
+}
+
+function showTipChoice(customerName){
+  const base = preTaxSubtotal(); // tip suggestions are based on pre-tax total, never on tax
+  const options = [
+    { label:'No Tip', amount:0 },
+    { label:'15%', amount:Math.round(base*0.15*100)/100 },
+    { label:'20%', amount:Math.round(base*0.20*100)/100 },
+    { label:'25%', amount:Math.round(base*0.25*100)/100 }
+  ];
+  showOverlay(`
+    <div id="tipChoice">
+      <h2 style="margin-bottom:6px;">Add a tip?</h2>
+      <p style="margin-bottom:22px;">100% goes to the crew — thank you!</p>
+      <div class="tipGrid">
+        ${options.map(o => `
+          <button class="tipOption" onclick="selectTip(${o.amount}, this)">
+            <div class="tipPct">${o.label}</div>
+            ${o.amount > 0 ? `<div class="tipDollar">$${o.amount.toFixed(2)}</div>` : ''}
+          </button>
+        `).join('')}
+      </div>
+      <div class="tipCustomRow">
+        <span>$</span>
+        <input id="customTipInput" type="number" min="0" step="0.01" placeholder="Custom amount" oninput="selectCustomTip(this.value)">
+      </div>
+      <button class="continueBtn" id="tipContinueBtn" onclick="confirmTip('${escapeHtml(customerName).replace(/'/g,"\\'")}')">Continue to Payment</button>
+      <div class="namePromptActions">
+        <button class="ghostBtn" onclick="showPaymentChoice('${escapeHtml(customerName).replace(/'/g,"\\'")}')">Go Back</button>
+        <button class="ghostBtn cancelBtn" onclick="resetKiosk()">Cancel Order</button>
+      </div>
+    </div>
+  `);
+  selectTip(0, document.querySelector('.tipOption')); // default to No Tip selected
+}
+
+let selectedTip = 0;
+function selectTip(amount, btnEl){
+  selectedTip = amount;
+  document.getElementById('customTipInput').value = '';
+  document.querySelectorAll('.tipOption').forEach(b => b.classList.remove('selected'));
+  if(btnEl) btnEl.classList.add('selected');
+  updateTipContinueLabel();
+}
+function selectCustomTip(value){
+  selectedTip = Math.max(0, Number(value) || 0);
+  document.querySelectorAll('.tipOption').forEach(b => b.classList.remove('selected'));
+  updateTipContinueLabel();
+}
+function updateTipContinueLabel(){
+  const grand = grandTotal() + selectedTip;
+  document.getElementById('tipContinueBtn').textContent =
+    selectedTip > 0 ? `Continue — $${grand.toFixed(2)} total` : `Continue — $${grandTotal().toFixed(2)} total`;
+}
+function confirmTip(customerName){
+  placeOrder(customerName, 'card', selectedTip);
+}
+
+async function placeCashOrder(customerName){
+  if(!config.supaUrl || !config.supaKey){
+    alert('Fill in the setup panel (gear icon, top right) first.');
+    return;
+  }
+  const subtotal = preTaxSubtotal();
+  const tax = taxAmount();
+  const total = grandTotal();
+  if(total <= 0) return;
+
+  showOverlay(`<div class="spinner"></div><h2>Sending order...</h2><p>Writing your order.</p>`);
+
+  const items = {};
+  Object.entries(cart).forEach(([id,qty])=> items[id]=qty);
+
+  try{
+    const insertRes = await fetch(`${config.supaUrl}/rest/v1/orders`, {
+      method:'POST',
+      headers:{
+        'apikey': config.supaKey,
+        'Authorization': 'Bearer '+config.supaKey,
+        'Content-Type':'application/json',
+        'Prefer':'return=representation'
+      },
+      body: JSON.stringify({
+        truck: config.truck,
+        items: items,
+        subtotal_amount: subtotal,
+        tax_rate: Number(config.taxRate)||0,
+        tax_amount: tax,
+        total_amount: total,
+        customer_name: customerName,
+        reference_id: crypto.randomUUID(),
+        status: 'paid',
+        payment_method: 'cash',
+        payment_status: 'CASH_PENDING'
+      })
+    });
+    if(!insertRes.ok) throw new Error('Could not create order ('+insertRes.status+')');
+
+    showOverlay(`
+      <div class="successMark">✓</div>
+      <h2>Order confirmed, ${escapeHtml(customerName)}!</h2>
+      <p>Pay $${total.toFixed(2)} cash at the window when we call your name.</p>
+      <button class="ghostBtn" onclick="resetKiosk()">New Order Now</button>
+    `);
+    startAutoReset(7);
+
+  } catch(err){
+    showOverlay(`
+      <div class="failMark">✕</div>
+      <h2>Something went wrong</h2>
+      <p>${err.message}</p>
+      <button class="ghostBtn" onclick="hideOverlay()">Try Again</button>
+    `);
+  }
+}
+
+async function placeOrder(customerName, paymentMethod, tipAmount){
   if(!config.supaUrl || !config.supaKey || !config.flowUrl){
     alert('Fill in the setup panel (gear icon, top right) first.');
     return;
   }
-  const total = cartTotalAmount();
+  const subtotal = preTaxSubtotal();
+  const tax = taxAmount();
+  const orderTotal = grandTotal();     // menu total, tax included, tip NOT included
+  const tip = Math.round((tipAmount||0) * 100) / 100;
+  const total = Math.round((orderTotal + tip) * 100) / 100;  // the actual amount charged
   if(total <= 0) return;
 
   showOverlay(`<div class="spinner"></div><h2>Sending order...</h2><p>Writing your order and starting checkout.</p>`);
@@ -564,9 +765,14 @@ async function placeOrder(customerName){
       body: JSON.stringify({
         truck: config.truck,
         items: items,
+        subtotal_amount: subtotal,
+        tax_rate: Number(config.taxRate)||0,
+        tax_amount: tax,
+        tip_amount: tip,
         total_amount: total,
         customer_name: customerName,
-        reference_id: crypto.randomUUID()
+        reference_id: crypto.randomUUID(),
+        payment_method: paymentMethod || 'card'
       })
     });
     if(!insertRes.ok) throw new Error('Could not create order ('+insertRes.status+')');
@@ -574,7 +780,7 @@ async function placeOrder(customerName){
     const order = rows[0];
     currentOrderId = order.id;
 
-    // 2. Fire the checkout flow (Power Automate) with order id + amount
+    // 2. Fire the checkout flow (Power Automate) with order id, amount, and tip
     showOverlay(`
       <div class="checkAmt">$${total.toFixed(2)}</div>
       <div class="spinner"></div>
@@ -589,6 +795,7 @@ async function placeOrder(customerName){
       body: JSON.stringify({
         order_id: order.reference_id,
         amount: Math.round(total*100),
+        tip_amount: Math.round(tip*100),
         device_id: config.deviceId
       })
     });
