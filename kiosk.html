@@ -225,9 +225,27 @@ function saveConfig(){
   config.flowUrl = document.getElementById('cfgFlowUrl').value.trim();
   config.truck   = document.getElementById('cfgTruck').value;
   document.getElementById('truckTag').textContent = config.truck.toUpperCase();
+
+  try{
+    localStorage.setItem('lgcd-kiosk-config', JSON.stringify(config));
+  } catch(e){ /* storage unavailable — config still works for this session */ }
+
   const note = document.getElementById('savedNote');
   note.style.display = 'block';
   setTimeout(()=> note.style.display='none', 1800);
+}
+
+function loadConfig(){
+  try{
+    const saved = localStorage.getItem('lgcd-kiosk-config');
+    if(!saved) return;
+    config = { ...config, ...JSON.parse(saved) };
+    document.getElementById('cfgSupaUrl').value = config.supaUrl || '';
+    document.getElementById('cfgSupaKey').value = config.supaKey || '';
+    document.getElementById('cfgFlowUrl').value = config.flowUrl || '';
+    document.getElementById('cfgTruck').value = config.truck || 'van';
+    document.getElementById('truckTag').textContent = (config.truck || 'van').toUpperCase();
+  } catch(e){ /* no saved config yet, or storage unavailable */ }
 }
 
 function renderMenu(){
@@ -450,6 +468,7 @@ function resetKiosk(){
 }
 
 renderMenu();
+loadConfig();
 </script>
 </body>
 </html>
