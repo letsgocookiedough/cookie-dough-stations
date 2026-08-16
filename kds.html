@@ -33,6 +33,13 @@
     background:rgba(255,248,237,0.08); border:1px solid var(--line);
     color:var(--cream); font-size:16px; cursor:pointer;
   }
+  #soundBtn{
+    position:fixed; top:10px; right:52px; z-index:50;
+    width:34px; height:34px; border-radius:50%;
+    background:rgba(255,248,237,0.08); border:1px solid var(--line);
+    color:var(--cream); font-size:16px; cursor:pointer;
+  }
+  #soundBtn.muted{opacity:.4;}
   #configPanel{
     position:fixed; top:0; right:0; height:100%; width:320px; max-width:88vw;
     background:#241813; border-left:1px solid var(--line);
@@ -142,6 +149,7 @@
 </head>
 <body>
 
+<button id="soundBtn" onclick="toggleSound()">🔔</button>
 <button id="configBtn" onclick="document.getElementById('configPanel').classList.toggle('open')">⚙</button>
 <div id="configPanel">
   <h3 style="margin:0 0 4px;">Setup</h3>
@@ -200,6 +208,53 @@ let allOrders = [];
 let pollTimer = null;
 const POLL_INTERVAL = 4000;
 
+/* ---------- sound ---------- */
+let soundEnabled = true;
+let audioCtx = null;
+let knownOpenIds = null; // null = not initialized yet (first load, no chime)
+
+function getAudioCtx(){
+  if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return audioCtx;
+}
+
+function unlockAudio(){
+  const ctx = getAudioCtx();
+  if(ctx.state === 'suspended') ctx.resume();
+}
+document.addEventListener('click', unlockAudio, { once:false });
+
+function playBell(){
+  if(!soundEnabled) return;
+  try{
+    const ctx = getAudioCtx();
+    if(ctx.state === 'suspended') ctx.resume();
+    const now = ctx.currentTime;
+    [880, 1320].forEach((freq, i) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = freq;
+      const start = now + i*0.11;
+      gain.gain.setValueAtTime(0, start);
+      gain.gain.linearRampToValueAtTime(0.35, start + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.001, start + 0.5);
+      osc.connect(gain).connect(ctx.destination);
+      osc.start(start);
+      osc.stop(start + 0.55);
+    });
+  } catch(e){ /* audio unavailable on this device/browser */ }
+}
+
+function toggleSound(){
+  soundEnabled = !soundEnabled;
+  document.getElementById('soundBtn').classList.toggle('muted', !soundEnabled);
+  document.getElementById('soundBtn').textContent = soundEnabled ? '🔔' : '🔕';
+  unlockAudio();
+  if(soundEnabled) playBell();
+  try{ localStorage.setItem('lgcd-kds-sound', soundEnabled ? '1':'0'); } catch(e){}
+}
+
 function saveConfig(){
   config.supaUrl = document.getElementById('cfgSupaUrl').value.trim().replace(/\/$/,'');
   config.supaKey = document.getElementById('cfgSupaKey').value.trim();
@@ -250,6 +305,15 @@ async function fetchOrders(){
     });
     if(!res.ok) return;
     allOrders = await res.json();
+
+    const currentOpenIds = new Set(allOrders.filter(o => o.status === 'paid').map(o => o.id));
+    if(knownOpenIds !== null){
+      let hasNew = false;
+      currentOpenIds.forEach(id => { if(!knownOpenIds.has(id)) hasNew = true; });
+      if(hasNew) playBell();
+    }
+    knownOpenIds = currentOpenIds;
+
     render();
   } catch(e){ /* transient network hiccup, next poll retries */ }
 }
@@ -370,6 +434,14 @@ async function bumpOrder(orderId, btnEl){
 }
 
 loadConfig();
+try{
+  const savedSound = localStorage.getItem('lgcd-kds-sound');
+  if(savedSound === '0'){
+    soundEnabled = false;
+    document.getElementById('soundBtn').classList.add('muted');
+    document.getElementById('soundBtn').textContent = '🔕';
+  }
+} catch(e){}
 fetchOrders();
 pollTimer = setInterval(fetchOrders, POLL_INTERVAL);
 </script>
