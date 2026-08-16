@@ -175,12 +175,12 @@
     font-size:22px; text-align:center; font-family:'Fredoka',sans-serif;
   }
   #namePrompt input::placeholder{color:rgba(27,36,48,0.4); font-size:17px;}
-  #namePrompt .continueBtn{
+  .continueBtn{
     background:var(--butter); color:var(--ink); border:none; border-radius:14px;
     padding:16px 40px; font-size:17px; font-weight:800; font-family:'Fredoka',sans-serif;
     cursor:pointer; letter-spacing:.02em;
   }
-  #namePrompt .continueBtn:disabled{opacity:.35;}
+  .continueBtn:disabled{opacity:.35;}
   #namePrompt .skipHint{font-size:12px; opacity:.5; margin-top:16px;}
   .namePromptActions{display:flex; gap:10px; justify-content:center; margin-top:14px;}
   .namePromptActions .cancelBtn{border-color:rgba(193,68,46,0.5); color:var(--jam);}
@@ -604,11 +604,11 @@ function showPaymentChoice(customerName){
       <h2 style="margin-bottom:6px;">How would you like to pay, ${escapeHtml(customerName)}?</h2>
       <p style="margin-bottom:24px;">$${grandTotal().toFixed(2)} total (incl. tax)</p>
       <div class="paymentChoiceGrid">
-        <button class="payOption" onclick="showTipChoice('${escapeHtml(customerName).replace(/'/g,"\\'")}')">
+        <button class="payOption" onclick="showTipChoice('${escapeHtml(customerName).replace(/'/g,"\\'")}', 'card')">
           <div class="payIcon">💳</div>
           <div>Pay by Card</div>
         </button>
-        <button class="payOption" onclick="placeCashOrder('${escapeHtml(customerName).replace(/'/g,"\\'")}')">
+        <button class="payOption" onclick="showTipChoice('${escapeHtml(customerName).replace(/'/g,"\\'")}', 'cash')">
           <div class="payIcon">💵</div>
           <div>Pay Cash at Pickup</div>
         </button>
@@ -621,7 +621,14 @@ function showPaymentChoice(customerName){
   `);
 }
 
-function showTipChoice(customerName){
+let tipContextPaymentMethod = 'card';
+
+function roundToQuarter(amount){
+  return Math.round(amount / 0.25) * 0.25;
+}
+
+function showTipChoice(customerName, paymentMethod){
+  tipContextPaymentMethod = paymentMethod;
   const base = preTaxSubtotal(); // tip suggestions are based on pre-tax total, never on tax
   const options = [
     { label:'No Tip', amount:0 },
@@ -629,6 +636,7 @@ function showTipChoice(customerName){
     { label:'20%', amount:Math.round(base*0.20*100)/100 },
     { label:'25%', amount:Math.round(base*0.25*100)/100 }
   ];
+  const namesc = escapeHtml(customerName).replace(/'/g,"\\'");
   showOverlay(`
     <div id="tipChoice">
       <h2 style="margin-bottom:6px;">Add a tip?</h2>
@@ -645,9 +653,9 @@ function showTipChoice(customerName){
         <span>$</span>
         <input id="customTipInput" type="number" min="0" step="0.01" placeholder="Custom amount" oninput="selectCustomTip(this.value)">
       </div>
-      <button class="continueBtn" id="tipContinueBtn" onclick="confirmTip('${escapeHtml(customerName).replace(/'/g,"\\'")}')">Continue to Payment</button>
+      <button class="continueBtn" id="tipContinueBtn" onclick="confirmTip('${namesc}', '${paymentMethod}')">Continue to Payment</button>
       <div class="namePromptActions">
-        <button class="ghostBtn" onclick="showPaymentChoice('${escapeHtml(customerName).replace(/'/g,"\\'")}')">Go Back</button>
+        <button class="ghostBtn" onclick="showPaymentChoice('${namesc}')">Go Back</button>
         <button class="ghostBtn cancelBtn" onclick="resetKiosk()">Cancel Order</button>
       </div>
     </div>
@@ -669,22 +677,30 @@ function selectCustomTip(value){
   updateTipContinueLabel();
 }
 function updateTipContinueLabel(){
-  const grand = grandTotal() + selectedTip;
-  document.getElementById('tipContinueBtn').textContent =
-    selectedTip > 0 ? `Continue — $${grand.toFixed(2)} total` : `Continue — $${grandTotal().toFixed(2)} total`;
+  const rawGrand = grandTotal() + selectedTip;
+  const displayTotal = tipContextPaymentMethod === 'cash' ? roundToQuarter(rawGrand) : rawGrand;
+  document.getElementById('tipContinueBtn').textContent = `Continue — $${displayTotal.toFixed(2)} total`;
 }
-function confirmTip(customerName){
-  placeOrder(customerName, 'card', selectedTip);
+function confirmTip(customerName, paymentMethod){
+  if(paymentMethod === 'cash'){
+    placeCashOrder(customerName, selectedTip);
+  } else {
+    placeOrder(customerName, 'card', selectedTip);
+  }
 }
 
-async function placeCashOrder(customerName){
+async function placeCashOrder(customerName, tipAmount){
   if(!config.supaUrl || !config.supaKey){
     alert('Fill in the setup panel (gear icon, top right) first.');
     return;
   }
   const subtotal = preTaxSubtotal();
   const tax = taxAmount();
-  const total = grandTotal();
+  const orderTotal = grandTotal();
+  const rawTip = Math.round((tipAmount||0) * 100) / 100;
+  const rawTotal = orderTotal + rawTip;
+  const total = Math.round(roundToQuarter(rawTotal) * 100) / 100;  // cash drawer only has quarters and up
+  const tip = Math.round((total - orderTotal) * 100) / 100;        // tip absorbs the rounding difference
   if(total <= 0) return;
 
   showOverlay(`<div class="spinner"></div><h2>Sending order...</h2><p>Writing your order.</p>`);
@@ -707,6 +723,7 @@ async function placeCashOrder(customerName){
         subtotal_amount: subtotal,
         tax_rate: Number(config.taxRate)||0,
         tax_amount: tax,
+        tip_amount: tip,
         total_amount: total,
         customer_name: customerName,
         reference_id: crypto.randomUUID(),
