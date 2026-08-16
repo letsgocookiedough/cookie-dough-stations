@@ -8,14 +8,16 @@
   @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@400;600;700;800&display=swap');
 
   :root{
-    --dough:#3B2621;
-    --dough-2:#54372F;
-    --cream:#FFF8ED;
-    --butter:#E8B84B;
+    --dough:#454A5E;
+    --dough-2:#565C74;
+    --cream:#F7F1E3;
+    --butter:#D9993D;
+    --sky:#8FC1DE;
     --jam:#C1442E;
     --jam-dark:#9C3320;
     --ok:#5B8C5A;
-    --line: rgba(255,248,237,0.14);
+    --ink:#1B2430;
+    --line: rgba(247,241,227,0.14);
   }
   *{box-sizing:border-box;}
   html,body{height:100%;}
@@ -34,7 +36,7 @@
   #configBtn{
     position:fixed; top:10px; right:10px; z-index:50;
     width:34px; height:34px; border-radius:50%;
-    background:rgba(255,248,237,0.08); border:1px solid var(--line);
+    background:rgba(247,241,227,0.08); border:1px solid var(--line);
     color:var(--cream); font-size:16px; cursor:pointer;
   }
   #configPanel{
@@ -47,7 +49,7 @@
   #configPanel label{display:block; font-size:12px; opacity:.75; margin:14px 0 4px;}
   #configPanel input, #configPanel select{
     width:100%; padding:8px 10px; border-radius:8px; border:1px solid var(--line);
-    background:rgba(255,248,237,0.06); color:var(--cream); font-size:14px;
+    background:rgba(247,241,227,0.06); color:var(--cream); font-size:14px;
   }
   #configPanel .savedNote{font-size:12px; color:var(--ok); margin-top:10px; display:none;}
 
@@ -60,29 +62,41 @@
   }
   header h1{
     font-size:clamp(28px,5vw,40px); margin:4px 0 2px; font-weight:700;
-    color:var(--butter);
+    color:var(--cream);
+    text-shadow:
+      -2px -2px 0 var(--ink), 2px -2px 0 var(--ink), -2px 2px 0 var(--ink), 2px 2px 0 var(--ink),
+      0 4px 0 var(--sky);
   }
   header .truckTag{
-    display:inline-block; margin-top:6px; padding:4px 14px; border-radius:20px;
-    background:rgba(232,184,75,0.15); border:1px solid rgba(232,184,75,0.4);
-    font-size:13px; font-weight:700; letter-spacing:.04em;
+    display:inline-block; margin-top:10px; padding:4px 14px; border-radius:20px;
+    background:rgba(143,193,222,0.18); border:1px solid rgba(143,193,222,0.5);
+    font-size:13px; font-weight:700; letter-spacing:.04em; color:var(--sky);
   }
 
   /* ---------- menu ---------- */
   main{max-width:640px; margin:0 auto; padding:10px 16px 160px;}
   .menuGrid{display:grid; grid-template-columns:1fr; gap:12px; margin-top:18px;}
   .item{
-    display:flex; align-items:center; justify-content:space-between;
+    display:flex; align-items:center; gap:14px;
     background:var(--dough-2); border:1px solid var(--line); border-radius:16px;
-    padding:16px 18px;
+    padding:14px 18px;
   }
+  .item .thumb{
+    width:56px; height:56px; border-radius:12px; flex-shrink:0;
+    background-size:cover; background-position:center;
+    background-color:rgba(217,153,61,0.18);
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Fredoka',sans-serif; font-weight:700; font-size:20px; color:var(--butter);
+    border:1px solid var(--line);
+  }
+  .item .info{flex:1; min-width:0;}
   .item .info .name{font-family:'Fredoka',sans-serif; font-size:19px; font-weight:600;}
   .item .info .price{font-size:14px; opacity:.65; margin-top:2px;}
   .item .info .ingredients{font-size:11px; opacity:.45; margin-top:4px; line-height:1.4;}
   .stepper{display:flex; align-items:center; gap:10px;}
   .stepper button{
     width:38px; height:38px; border-radius:10px; border:none; cursor:pointer;
-    background:rgba(255,248,237,0.1); color:var(--cream); font-size:20px; font-weight:700;
+    background:rgba(247,241,227,0.1); color:var(--cream); font-size:20px; font-weight:700;
   }
   .stepper button.plus{background:var(--butter); color:var(--dough);}
   .stepper .qty{min-width:22px; text-align:center; font-weight:800; font-size:16px;}
@@ -100,22 +114,22 @@
   #cartBar .totalWrap .label{font-size:11px; opacity:.6; text-transform:uppercase; letter-spacing:.08em;}
   #cartBar .totalWrap .amount{font-family:'Fredoka',sans-serif; font-size:24px; font-weight:700; color:var(--butter);}
   #cartBar button{
-    background:var(--jam); color:var(--cream); border:none; border-radius:14px;
+    background:var(--butter); color:var(--ink); border:none; border-radius:14px;
     padding:16px 28px; font-size:16px; font-weight:800; font-family:'Fredoka',sans-serif;
     cursor:pointer; letter-spacing:.02em;
   }
-  #cartBar button:active{background:var(--jam-dark);}
+  #cartBar button:active{opacity:.85;}
 
   /* ---------- name prompt ---------- */
   #namePrompt input{
     width:100%; max-width:320px; padding:18px 20px; margin:0 0 22px;
-    border-radius:14px; border:2px solid var(--butter);
-    background:rgba(255,248,237,0.08); color:var(--cream);
+    border-radius:14px; border:2px solid var(--sky);
+    background:rgba(247,241,227,0.08); color:var(--cream);
     font-size:22px; text-align:center; font-family:'Fredoka',sans-serif;
   }
-  #namePrompt input::placeholder{color:rgba(255,248,237,0.4); font-size:17px;}
+  #namePrompt input::placeholder{color:rgba(247,241,227,0.4); font-size:17px;}
   #namePrompt .continueBtn{
-    background:var(--jam); color:var(--cream); border:none; border-radius:14px;
+    background:var(--butter); color:var(--ink); border:none; border-radius:14px;
     padding:16px 40px; font-size:17px; font-weight:800; font-family:'Fredoka',sans-serif;
     cursor:pointer; letter-spacing:.02em;
   }
@@ -296,7 +310,8 @@ async function loadMenu(){
       .filter(r => r['available_'+truck])
       .map(r => ({
         id:r.id, name:r.name, price:Number(r['price_'+truck]),
-        ingredients:r.ingredients || '', allergenWarning:r.allergen_warning || ''
+        ingredients:r.ingredients || '', allergenWarning:r.allergen_warning || '',
+        imageUrl:r.image_url || ''
       }));
     renderMenu();
   } catch(e){
@@ -308,6 +323,9 @@ function renderMenu(){
   const grid = document.getElementById('menuGrid');
   grid.innerHTML = MENU.map(item => `
     <div class="item">
+      <div class="thumb" style="${item.imageUrl ? `background-image:url('${item.imageUrl}')` : ''}">
+        ${item.imageUrl ? '' : escapeHtml((item.name||'?').charAt(0))}
+      </div>
       <div class="info">
         <div class="name">${item.name}</div>
         <div class="price">$${item.price.toFixed(2)}</div>
