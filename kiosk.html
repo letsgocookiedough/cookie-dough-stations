@@ -95,6 +95,7 @@
     transform:translateY(100%); transition:transform .25s ease;
   }
   #cartBar.visible{transform:translateY(0);}
+  #cartBar .row{display:flex; align-items:center; justify-content:space-between; gap:14px;}
   #cartBar .totalWrap .label{font-size:11px; opacity:.6; text-transform:uppercase; letter-spacing:.08em;}
   #cartBar .totalWrap .amount{font-family:'Fredoka',sans-serif; font-size:24px; font-weight:700; color:var(--butter);}
   #cartBar button{
@@ -103,6 +104,22 @@
     cursor:pointer; letter-spacing:.02em;
   }
   #cartBar button:active{background:var(--jam-dark);}
+
+  /* ---------- name prompt ---------- */
+  #namePrompt input{
+    width:100%; max-width:320px; padding:18px 20px; margin:0 0 22px;
+    border-radius:14px; border:2px solid var(--butter);
+    background:rgba(255,248,237,0.08); color:var(--cream);
+    font-size:22px; text-align:center; font-family:'Fredoka',sans-serif;
+  }
+  #namePrompt input::placeholder{color:rgba(255,248,237,0.4); font-size:17px;}
+  #namePrompt .continueBtn{
+    background:var(--jam); color:var(--cream); border:none; border-radius:14px;
+    padding:16px 40px; font-size:17px; font-weight:800; font-family:'Fredoka',sans-serif;
+    cursor:pointer; letter-spacing:.02em;
+  }
+  #namePrompt .continueBtn:disabled{opacity:.35;}
+  #namePrompt .skipHint{font-size:12px; opacity:.5; margin-top:16px;}
 
   /* ---------- overlay states ---------- */
   #overlay{
@@ -174,11 +191,13 @@
 </main>
 
 <div id="cartBar">
-  <div class="totalWrap">
-    <div class="label">Total</div>
-    <div class="amount" id="cartTotal">$0.00</div>
+  <div class="row">
+    <div class="totalWrap">
+      <div class="label">Total</div>
+      <div class="amount" id="cartTotal">$0.00</div>
+    </div>
+    <button id="checkoutBtn" onclick="showNamePrompt()">Checkout</button>
   </div>
-  <button id="checkoutBtn" onclick="placeOrder()">Pay at Terminal</button>
 </div>
 
 <div id="overlay"></div>
@@ -259,7 +278,37 @@ function hideOverlay(){
   document.getElementById('overlay').classList.remove('show');
 }
 
-async function placeOrder(){
+function showNamePrompt(){
+  const total = cartTotalAmount();
+  if(total <= 0) return;
+
+  showOverlay(`
+    <div id="namePrompt">
+      <h2 style="margin-bottom:6px;">What's your name?</h2>
+      <p style="margin-bottom:20px;">So we can call your order when it's ready.</p>
+      <input id="nameInput" type="text" placeholder="First name" maxlength="30" autocomplete="off" autocapitalize="words">
+      <br>
+      <button class="continueBtn" id="nameContinueBtn" disabled onclick="confirmName()">Continue to Payment</button>
+      <div class="skipHint">$${total.toFixed(2)} total</div>
+    </div>
+  `);
+
+  const input = document.getElementById('nameInput');
+  const btn = document.getElementById('nameContinueBtn');
+  input.addEventListener('input', ()=>{ btn.disabled = input.value.trim().length === 0; });
+  input.addEventListener('keydown', (e)=>{ if(e.key === 'Enter' && input.value.trim()) confirmName(); });
+  // Autofocus opens the on-screen keyboard on a touchscreen kiosk
+  setTimeout(()=> input.focus(), 150);
+}
+
+function confirmName(){
+  const input = document.getElementById('nameInput');
+  const customerName = input.value.trim();
+  if(!customerName) return;
+  placeOrder(customerName);
+}
+
+async function placeOrder(customerName){
   if(!config.supaUrl || !config.supaKey || !config.flowUrl){
     alert('Fill in the setup panel (gear icon, top right) first.');
     return;
@@ -286,6 +335,7 @@ async function placeOrder(){
         truck: config.truck,
         items: items,
         total_amount: total,
+        customer_name: customerName,
         reference_id: crypto.randomUUID()
       })
     });
@@ -313,7 +363,7 @@ async function placeOrder(){
     });
     if(!flowRes.ok) throw new Error('Could not start checkout ('+flowRes.status+')');
 
-    startPolling(order.id, total);
+    startPolling(order.id, total, customerName);
 
   } catch(err){
     showOverlay(`
@@ -325,7 +375,28 @@ async function placeOrder(){
   }
 }
 
-function startPolling(orderId, total){
+function escapeHtml(str){
+  const d = document.createElement('div');
+  d.textContent = str;
+  return d.innerHTML;
+}
+
+let autoResetTimer = null;
+function startAutoReset(seconds){
+  clearTimeout(autoResetTimer);
+  let remaining = seconds;
+  const tick = () => {
+    const btn = document.querySelector('#overlay .ghostBtn');
+    const base = document.querySelector('#overlay .ghostBtnLabel')?.textContent || null;
+    if(btn) btn.textContent = btn.textContent.replace(/\s*\(\d+\)$/,'') + ` (${remaining})`;
+    if(remaining <= 0){ resetKiosk(); return; }
+    remaining -= 1;
+    autoResetTimer = setTimeout(tick, 1000);
+  };
+  tick();
+}
+
+function startPolling(orderId, total, customerName){
   pollElapsed = 0;
   clearInterval(pollTimer);
   pollTimer = setInterval(async ()=>{
@@ -350,24 +421,27 @@ function startPolling(orderId, total){
         clearInterval(pollTimer);
         showOverlay(`
           <div class="successMark">✓</div>
-          <h2>Order confirmed!</h2>
+          <h2>Order confirmed, ${escapeHtml(customerName)}!</h2>
           <p>We're making it now — grab a spot at the window.</p>
-          <button class="ghostBtn" onclick="resetKiosk()">New Order</button>
+          <button class="ghostBtn" onclick="resetKiosk()">New Order Now</button>
         `);
+        startAutoReset(6);
       } else if(status === 'canceled'){
         clearInterval(pollTimer);
         showOverlay(`
           <div class="failMark">✕</div>
           <h2>Payment didn't go through</h2>
           <p>No charge was made. You can try again.</p>
-          <button class="ghostBtn" onclick="resetKiosk()">Try Again</button>
+          <button class="ghostBtn" onclick="resetKiosk()">Try Again Now</button>
         `);
+        startAutoReset(8);
       }
     } catch(e){ /* transient network hiccup, next poll will retry */ }
   }, POLL_INTERVAL);
 }
 
 function resetKiosk(){
+  clearTimeout(autoResetTimer);
   cart = {};
   currentOrderId = null;
   renderMenu();
