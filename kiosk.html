@@ -184,15 +184,23 @@
   .namePromptActions .cancelBtn{border-color:rgba(193,68,46,0.5); color:var(--jam);}
 
   /* ---------- allergen warning ---------- */
-  #allergenPrompt{max-width:340px;}
-  #allergenPrompt .warnIcon{font-size:44px; margin-bottom:6px;}
+  #allergenPrompt{max-width:720px;}
+  #allergenPrompt .warnIcon{font-size:100px; margin-bottom:10px;}
+  #allergenPrompt h2{font-size:44px; margin-bottom:24px;}
   #allergenPrompt .allergenLine{
-    text-align:left; background:rgba(193,68,46,0.14); border:1px solid rgba(193,68,46,0.4);
-    border-radius:12px; padding:12px 14px; margin:0 0 12px; font-size:15px;
+    text-align:left; background:rgba(193,68,46,0.14); border:2px solid rgba(193,68,46,0.4);
+    border-radius:18px; padding:22px 26px; margin:0 0 20px; font-size:24px;
   }
-  #allergenPrompt .allergenLine strong{color:var(--jam); display:block; margin-bottom:2px; font-size:14px;}
-  #allergenPrompt .continueBtn{margin-top:8px;}
-  #allergenPrompt .ghostBtn{margin-top:10px;}
+  #allergenPrompt .allergenLine strong{color:var(--jam); display:block; margin-bottom:6px; font-size:24px;}
+  #allergenPrompt .allergenActions{
+    display:flex; gap:16px; justify-content:center; margin-top:20px; flex-wrap:wrap;
+  }
+  #allergenPrompt .continueBtn{
+    padding:22px 48px; font-size:22px; border-radius:16px;
+  }
+  #allergenPrompt .ghostBtn{
+    padding:22px 40px; font-size:20px; border-radius:16px;
+  }
 
   /* ---------- overlay states ---------- */
   #overlay{
@@ -488,9 +496,10 @@ function showAllergenWarning(flaggedItems){
           ${escapeHtml(item.allergenWarning)}
         </div>
       `).join('')}
-      <button class="continueBtn" onclick="showNamePrompt()">I Understand, Continue</button>
-      <br>
-      <button class="ghostBtn" onclick="hideOverlay()">Go Back</button>
+      <div class="allergenActions">
+        <button class="continueBtn" onclick="showNamePrompt()">I Understand, Continue</button>
+        <button class="ghostBtn" onclick="hideOverlay()">Go Back</button>
+      </div>
     </div>
   `);
 }
