@@ -78,6 +78,7 @@
   }
   .item .info .name{font-family:'Fredoka',sans-serif; font-size:19px; font-weight:600;}
   .item .info .price{font-size:14px; opacity:.65; margin-top:2px;}
+  .item .info .ingredients{font-size:11px; opacity:.45; margin-top:4px; line-height:1.4;}
   .stepper{display:flex; align-items:center; gap:10px;}
   .stepper button{
     width:38px; height:38px; border-radius:10px; border:none; cursor:pointer;
@@ -120,6 +121,17 @@
   }
   #namePrompt .continueBtn:disabled{opacity:.35;}
   #namePrompt .skipHint{font-size:12px; opacity:.5; margin-top:16px;}
+
+  /* ---------- allergen warning ---------- */
+  #allergenPrompt{max-width:340px;}
+  #allergenPrompt .warnIcon{font-size:44px; margin-bottom:6px;}
+  #allergenPrompt .allergenLine{
+    text-align:left; background:rgba(193,68,46,0.14); border:1px solid rgba(193,68,46,0.4);
+    border-radius:12px; padding:12px 14px; margin:0 0 12px; font-size:15px;
+  }
+  #allergenPrompt .allergenLine strong{color:var(--jam); display:block; margin-bottom:2px; font-size:14px;}
+  #allergenPrompt .continueBtn{margin-top:8px;}
+  #allergenPrompt .ghostBtn{margin-top:10px;}
 
   /* ---------- overlay states ---------- */
   #overlay{
@@ -176,6 +188,9 @@
     <option value="trailer">Trailer</option>
   </select>
 
+  <label>Paired Square Terminal Device ID</label>
+  <input id="cfgDeviceId" placeholder="e.g. 9fa747a2-25ff-...">
+
   <button onclick="saveConfig()" style="margin-top:18px; width:100%; padding:10px; border-radius:8px; border:none; background:var(--butter); color:var(--dough); font-weight:800; cursor:pointer;">Save</button>
   <div class="savedNote" id="savedNote">Saved for this session ✓</div>
 </div>
@@ -196,23 +211,17 @@
       <div class="label">Total</div>
       <div class="amount" id="cartTotal">$0.00</div>
     </div>
-    <button id="checkoutBtn" onclick="showNamePrompt()">Checkout</button>
+    <button id="checkoutBtn" onclick="checkAllergensAndProceed()">Checkout</button>
   </div>
 </div>
 
 <div id="overlay"></div>
 
 <script>
-const MENU = [
-  { id:'chocolate_chip', name:'Chocolate Chip', price:1.00 },
-  { id:'sugar', name:'Sugar Cookie', price:1.00 },
-  { id:'snickerdoodle', name:'Snickerdoodle', price:1.00 },
-  { id:'birthday_cake', name:'Birthday Cake', price:1.00 },
-  { id:'brownie_batter', name:'Brownie Batter', price:1.00 },
-];
+let MENU = [];
 
 let cart = {};       // { itemId: qty }
-let config = { supaUrl:'', supaKey:'', flowUrl:'', truck:'van' };
+let config = { supaUrl:'', supaKey:'', flowUrl:'', truck:'van', deviceId:'' };
 let currentOrderId = null;
 let pollTimer = null;
 let pollElapsed = 0;
@@ -224,6 +233,7 @@ function saveConfig(){
   config.supaKey = document.getElementById('cfgSupaKey').value.trim();
   config.flowUrl = document.getElementById('cfgFlowUrl').value.trim();
   config.truck   = document.getElementById('cfgTruck').value;
+  config.deviceId = document.getElementById('cfgDeviceId').value.trim();
   document.getElementById('truckTag').textContent = config.truck.toUpperCase();
 
   try{
@@ -233,19 +243,65 @@ function saveConfig(){
   const note = document.getElementById('savedNote');
   note.style.display = 'block';
   setTimeout(()=> note.style.display='none', 1800);
+  loadMenu();
 }
 
 function loadConfig(){
   try{
     const saved = localStorage.getItem('lgcd-kiosk-config');
-    if(!saved) return;
-    config = { ...config, ...JSON.parse(saved) };
-    document.getElementById('cfgSupaUrl').value = config.supaUrl || '';
-    document.getElementById('cfgSupaKey').value = config.supaKey || '';
-    document.getElementById('cfgFlowUrl').value = config.flowUrl || '';
-    document.getElementById('cfgTruck').value = config.truck || 'van';
-    document.getElementById('truckTag').textContent = (config.truck || 'van').toUpperCase();
+    if(saved) config = { ...config, ...JSON.parse(saved) };
   } catch(e){ /* no saved config yet, or storage unavailable */ }
+
+  // URL params override saved config — lets each physical device be pre-configured
+  // e.g. kiosk.html?truck=van&device=ABC123 locks that device to Van + its paired terminal
+  const params = new URLSearchParams(window.location.search);
+  const urlTruck = params.get('truck');
+  const urlDevice = params.get('device');
+  if(urlTruck === 'van' || urlTruck === 'trailer') config.truck = urlTruck;
+  if(urlDevice) config.deviceId = urlDevice;
+
+  document.getElementById('cfgSupaUrl').value = config.supaUrl || '';
+  document.getElementById('cfgSupaKey').value = config.supaKey || '';
+  document.getElementById('cfgFlowUrl').value = config.flowUrl || '';
+  document.getElementById('cfgTruck').value = config.truck || 'van';
+  document.getElementById('cfgDeviceId').value = config.deviceId || '';
+  document.getElementById('truckTag').textContent = (config.truck || 'van').toUpperCase();
+
+  if(urlTruck === 'van' || urlTruck === 'trailer'){
+    const sel = document.getElementById('cfgTruck');
+    sel.disabled = true;
+    sel.title = 'Locked via URL for this device';
+  }
+  if(urlDevice){
+    const dev = document.getElementById('cfgDeviceId');
+    dev.disabled = true;
+    dev.title = 'Locked via URL for this device';
+  }
+}
+
+async function loadMenu(){
+  const grid = document.getElementById('menuGrid');
+  if(!config.supaUrl || !config.supaKey){
+    grid.innerHTML = '<p style="opacity:.55; text-align:center; padding:30px 10px;">Set up your project in the gear icon above to load the menu.</p>';
+    return;
+  }
+  try{
+    const res = await fetch(`${config.supaUrl}/rest/v1/menu_items?select=*&order=sort_order.asc`, {
+      headers:{ 'apikey': config.supaKey, 'Authorization': 'Bearer '+config.supaKey }
+    });
+    if(!res.ok) throw new Error();
+    const rows = await res.json();
+    const truck = config.truck === 'trailer' ? 'trailer' : 'van';
+    MENU = rows
+      .filter(r => r['available_'+truck])
+      .map(r => ({
+        id:r.id, name:r.name, price:Number(r['price_'+truck]),
+        ingredients:r.ingredients || '', allergenWarning:r.allergen_warning || ''
+      }));
+    renderMenu();
+  } catch(e){
+    grid.innerHTML = '<p style="opacity:.55; text-align:center; padding:30px 10px;">Could not load the menu. Check your setup values.</p>';
+  }
 }
 
 function renderMenu(){
@@ -255,6 +311,7 @@ function renderMenu(){
       <div class="info">
         <div class="name">${item.name}</div>
         <div class="price">$${item.price.toFixed(2)}</div>
+        ${item.ingredients ? `<div class="ingredients">${escapeHtml(item.ingredients)}</div>` : ''}
       </div>
       <div class="stepper">
         <button onclick="changeQty('${item.id}', -1)">−</button>
@@ -294,6 +351,39 @@ function showOverlay(html){
 }
 function hideOverlay(){
   document.getElementById('overlay').classList.remove('show');
+}
+
+function checkAllergensAndProceed(){
+  const total = cartTotalAmount();
+  if(total <= 0) return;
+
+  const flagged = Object.keys(cart)
+    .map(id => MENU.find(m => m.id === id))
+    .filter(item => item && item.allergenWarning);
+
+  if(flagged.length > 0){
+    showAllergenWarning(flagged);
+  } else {
+    showNamePrompt();
+  }
+}
+
+function showAllergenWarning(flaggedItems){
+  showOverlay(`
+    <div id="allergenPrompt">
+      <div class="warnIcon">⚠️</div>
+      <h2 style="margin-bottom:14px;">Allergen Notice</h2>
+      ${flaggedItems.map(item => `
+        <div class="allergenLine">
+          <strong>${escapeHtml(item.name)}</strong>
+          ${escapeHtml(item.allergenWarning)}
+        </div>
+      `).join('')}
+      <button class="continueBtn" onclick="showNamePrompt()">I Understand, Continue</button>
+      <br>
+      <button class="ghostBtn" onclick="hideOverlay()">Go Back</button>
+    </div>
+  `);
 }
 
 function showNamePrompt(){
@@ -376,7 +466,8 @@ async function placeOrder(customerName){
       headers:{'Content-Type':'application/json'},
       body: JSON.stringify({
         order_id: order.reference_id,
-        amount: Math.round(total*100)
+        amount: Math.round(total*100),
+        device_id: config.deviceId
       })
     });
     if(!flowRes.ok) throw new Error('Could not start checkout ('+flowRes.status+')');
@@ -467,8 +558,8 @@ function resetKiosk(){
   hideOverlay();
 }
 
-renderMenu();
 loadConfig();
+loadMenu();
 </script>
 </body>
 </html>
