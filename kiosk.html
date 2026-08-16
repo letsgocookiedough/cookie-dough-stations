@@ -60,6 +60,10 @@
   header .eyebrow{
     font-size:12px; letter-spacing:.14em; text-transform:uppercase; opacity:.6;
   }
+  header .logo{
+    max-width:min(380px, 80vw); width:100%; height:auto; display:block;
+    margin:0 auto; border-radius:10px;
+  }
   header h1{
     font-size:clamp(28px,5vw,40px); margin:4px 0 2px; font-weight:700;
     color:var(--cream);
@@ -248,7 +252,7 @@
 </div>
 
 <header>
-  <div class="eyebrow">Let's Go Cookie Dough</div>
+  <img src="logo.jpg" alt="Let's Go Cookie Dough" class="logo">
   <h1>Build Your Order</h1>
   <span class="truckTag" id="truckTag">VAN</span>
 </header>
