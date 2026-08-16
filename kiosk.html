@@ -101,7 +101,7 @@
   .item .info{padding:14px 16px 6px;}
   .item .info .name{font-family:'Fredoka',sans-serif; font-size:22px; font-weight:600;}
   .item .info .price{font-size:16px; opacity:.7; margin-top:3px;}
-  .item .info .ingredients{font-size:12px; opacity:.5; margin-top:6px; line-height:1.45;}
+  .item .info .ingredients{font-size:14px; opacity:.65; margin-top:6px; line-height:1.5;}
   .stepper{display:flex; align-items:center; justify-content:space-between; padding:10px 16px 16px;}
   .stepper button{
     width:42px; height:42px; border-radius:10px; border:none; cursor:pointer;
@@ -129,7 +129,10 @@
     background:rgba(27,36,48,0.1); color:var(--cream); font-size:16px; font-weight:700;
   }
   .cartLine .cartLinePrice{font-size:14px; opacity:.75; min-width:48px; text-align:right;}
-  #cartPanelFooter{margin-top:auto; padding-top:16px;}
+  #cartPanelFooter{
+    position:sticky; top:0; background:var(--dough-2); z-index:2;
+    padding-bottom:16px; margin-bottom:6px; border-bottom:1px solid var(--line);
+  }
   #cartPanelFooter .row{display:flex; justify-content:space-between; font-size:17px; margin-bottom:14px;}
   #cartPanelFooter .row span:last-child{font-family:'Fredoka',sans-serif; color:var(--butter); font-size:22px;}
   #cartPanelFooter button{
@@ -268,12 +271,12 @@
 
   <aside id="cartPanel">
     <h2>Your Order</h2>
-    <div id="cartPanelItems"></div>
-    <div id="cartPanelEmpty">Nothing yet — tap + on any item to add it.</div>
     <div id="cartPanelFooter">
       <div class="row"><span>Total</span><span id="cartPanelTotal">$0.00</span></div>
       <button onclick="checkAllergensAndProceed()">Checkout</button>
     </div>
+    <div id="cartPanelItems"></div>
+    <div id="cartPanelEmpty">Nothing yet — tap + on any item to add it.</div>
   </aside>
 </div>
 
