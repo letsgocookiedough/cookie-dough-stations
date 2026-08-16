@@ -91,11 +91,15 @@
   }
   .ticket{
     scroll-snap-align:start;
-    flex:0 0 270px; background:var(--paper); color:var(--ink);
+    --ticket-paper: var(--paper);
+    flex:0 0 270px; background:var(--ticket-paper); color:var(--ink);
     border-radius:2px; padding:18px 16px 16px; position:relative;
     box-shadow:0 10px 18px var(--paper-shadow);
     font-family:'Special Elite',monospace;
+    transition:background-color 0.4s ease;
   }
+  .ticket.ticket-yellow{ --ticket-paper: #F3DFA0; }
+  .ticket.ticket-red{ --ticket-paper: #F0B3A8; }
   .ticket::before{
     content:''; position:absolute; top:-20px; left:50%; transform:translateX(-50%);
     width:10px; height:10px; border-radius:50%;
@@ -108,8 +112,8 @@
   .ticket .jagged{
     position:absolute; top:0; left:0; right:0; height:8px;
     background:
-      linear-gradient(135deg, var(--paper) 50%, transparent 50%) 0 0/10px 10px,
-      linear-gradient(-135deg, var(--paper) 50%, transparent 50%) 0 0/10px 10px;
+      linear-gradient(135deg, var(--ticket-paper) 50%, transparent 50%) 0 0/10px 10px,
+      linear-gradient(-135deg, var(--ticket-paper) 50%, transparent 50%) 0 0/10px 10px;
     background-color:var(--dough);
   }
   .ticket .ttop{display:flex; justify-content:space-between; align-items:baseline; margin-top:6px;}
@@ -429,10 +433,16 @@ function render(){
   rail.innerHTML = list.map(o => {
     const isOpen = o.status === 'paid';
     const isCash = o.payment_method === 'cash';
-    const mins = Math.floor((Date.now() - new Date(o.created_at).getTime())/60000);
+    const secs = Math.floor((Date.now() - new Date(o.created_at).getTime())/1000);
+    const mins = Math.floor(secs/60);
     const warnClass = (isOpen && mins >= 10) ? 'warn' : '';
+    let ageClass = '';
+    if(isOpen){
+      if(secs >= 120) ageClass = 'ticket-red';
+      else if(secs >= 60) ageClass = 'ticket-yellow';
+    }
     return `
-      <div class="ticket">
+      <div class="ticket ${ageClass}">
         <div class="jagged"></div>
         ${isOpen && isCash ? `<div class="cashFlag">💵 CASH DUE<br>$${Number(o.total_amount).toFixed(2)}</div>` : ''}
         <div class="ttop">
