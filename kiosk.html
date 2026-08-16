@@ -104,7 +104,7 @@
   .item .info .ingredients{font-size:14px; opacity:.65; margin-top:6px; line-height:1.5;}
   .stepper{display:flex; align-items:center; justify-content:space-between; padding:10px 16px 16px; margin-top:auto;}
   .stepper button{
-    width:42px; height:42px; border-radius:10px; border:none; cursor:pointer;
+    width:58px; height:44px; border-radius:10px; border:none; cursor:pointer;
     background:rgba(27,36,48,0.1); color:var(--cream); font-size:22px; font-weight:700;
   }
   .stepper button.plus{background:var(--butter); color:var(--ink);}
@@ -631,11 +631,19 @@ function roundToQuarter(amount){
 function showTipChoice(customerName, paymentMethod){
   tipContextPaymentMethod = paymentMethod;
   const base = preTaxSubtotal(); // tip suggestions are based on pre-tax total, never on tax
+  const orderTotal = grandTotal();
+
+  function displayAmount(rawTip){
+    if(paymentMethod !== 'cash' || rawTip === 0) return rawTip;
+    // Show the actual tip that results once the cash total rounds to the nearest quarter
+    return Math.round((roundToQuarter(orderTotal + rawTip) - orderTotal) * 100) / 100;
+  }
+
   const options = [
     { label:'No Tip', amount:0 },
-    { label:'15%', amount:Math.round(base*0.15*100)/100 },
-    { label:'20%', amount:Math.round(base*0.20*100)/100 },
-    { label:'25%', amount:Math.round(base*0.25*100)/100 }
+    { label:'15%', amount:displayAmount(Math.round(base*0.15*100)/100) },
+    { label:'20%', amount:displayAmount(Math.round(base*0.20*100)/100) },
+    { label:'25%', amount:displayAmount(Math.round(base*0.25*100)/100) }
   ];
   const namesc = escapeHtml(customerName).replace(/'/g,"\\'");
   showOverlay(`
