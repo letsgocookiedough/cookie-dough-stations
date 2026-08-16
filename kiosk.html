@@ -215,6 +215,7 @@
     width:140px; padding:12px 14px; border-radius:12px; border:1px solid var(--line);
     background:var(--dough-2); color:var(--cream); font-size:16px; text-align:center;
   }
+  .tipRoundNote{font-size:12px; opacity:.55; margin-top:10px;}
 
   /* ---------- allergen warning ---------- */
   #allergenPrompt{max-width:720px;}
@@ -651,9 +652,10 @@ function showTipChoice(customerName, paymentMethod){
       </div>
       <div class="tipCustomRow">
         <span>$</span>
-        <input id="customTipInput" type="number" min="0" step="0.01" placeholder="Custom amount" oninput="selectCustomTip(this.value)">
+        <input id="customTipInput" type="number" min="0" step="0.25" placeholder="Custom amount" oninput="selectCustomTip(this.value)">
       </div>
       <button class="continueBtn" id="tipContinueBtn" onclick="confirmTip('${namesc}', '${paymentMethod}')">Continue to Payment</button>
+      ${paymentMethod === 'cash' ? '<div class="tipRoundNote">*Cash total rounds to the nearest quarter</div>' : ''}
       <div class="namePromptActions">
         <button class="ghostBtn" onclick="showPaymentChoice('${namesc}')">Go Back</button>
         <button class="ghostBtn cancelBtn" onclick="resetKiosk()">Cancel Order</button>
