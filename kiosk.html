@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Let's Go Cookie Dough — Order</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@400;600;700;800&display=swap');
+
+  :root{
+    --dough:#3B2621;
+    --dough-2:#54372F;
+    --cream:#FFF8ED;
+    --butter:#E8B84B;
+    --jam:#C1442E;
+    --jam-dark:#9C3320;
+    --ok:#5B8C5A;
+    --line: rgba(255,248,237,0.14);
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    margin:0;
+    background:var(--dough);
+    color:var(--cream);
+    font-family:'Nunito',sans-serif;
+    -webkit-tap-highlight-color:transparent;
+    user-select:none;
+    overflow-x:hidden;
+  }
+  h1,h2,h3,.display{font-family:'Fredoka',sans-serif;}
+
+  /* ---------- config drawer ---------- */
+  #configBtn{
+    position:fixed; top:10px; right:10px; z-index:50;
+    width:34px; height:34px; border-radius:50%;
+    background:rgba(255,248,237,0.08); border:1px solid var(--line);
+    color:var(--cream); font-size:16px; cursor:pointer;
+  }
+  #configPanel{
+    position:fixed; top:0; right:0; height:100%; width:320px; max-width:88vw;
+    background:var(--dough-2); border-left:1px solid var(--line);
+    transform:translateX(100%); transition:transform .25s ease;
+    z-index:49; padding:60px 20px 20px; overflow-y:auto;
+  }
+  #configPanel.open{transform:translateX(0);}
+  #configPanel label{display:block; font-size:12px; opacity:.75; margin:14px 0 4px;}
+  #configPanel input, #configPanel select{
+    width:100%; padding:8px 10px; border-radius:8px; border:1px solid var(--line);
+    background:rgba(255,248,237,0.06); color:var(--cream); font-size:14px;
+  }
+  #configPanel .savedNote{font-size:12px; color:var(--ok); margin-top:10px; display:none;}
+
+  /* ---------- header ---------- */
+  header{
+    padding:28px 20px 14px; text-align:center; position:relative;
+  }
+  header .eyebrow{
+    font-size:12px; letter-spacing:.14em; text-transform:uppercase; opacity:.6;
+  }
+  header h1{
+    font-size:clamp(28px,5vw,40px); margin:4px 0 2px; font-weight:700;
+    color:var(--butter);
+  }
+  header .truckTag{
+    display:inline-block; margin-top:6px; padding:4px 14px; border-radius:20px;
+    background:rgba(232,184,75,0.15); border:1px solid rgba(232,184,75,0.4);
+    font-size:13px; font-weight:700; letter-spacing:.04em;
+  }
+
+  /* ---------- menu ---------- */
+  main{max-width:640px; margin:0 auto; padding:10px 16px 160px;}
+  .menuGrid{display:grid; grid-template-columns:1fr; gap:12px; margin-top:18px;}
+  .item{
+    display:flex; align-items:center; justify-content:space-between;
+    background:var(--dough-2); border:1px solid var(--line); border-radius:16px;
+    padding:16px 18px;
+  }
+  .item .info .name{font-family:'Fredoka',sans-serif; font-size:19px; font-weight:600;}
+  .item .info .price{font-size:14px; opacity:.65; margin-top:2px;}
+  .stepper{display:flex; align-items:center; gap:10px;}
+  .stepper button{
+    width:38px; height:38px; border-radius:10px; border:none; cursor:pointer;
+    background:rgba(255,248,237,0.1); color:var(--cream); font-size:20px; font-weight:700;
+  }
+  .stepper button.plus{background:var(--butter); color:var(--dough);}
+  .stepper .qty{min-width:22px; text-align:center; font-weight:800; font-size:16px;}
+
+  /* ---------- cart bar ---------- */
+  #cartBar{
+    position:fixed; bottom:0; left:0; right:0; z-index:40;
+    background:var(--dough-2); border-top:1px solid var(--line);
+    padding:14px 18px calc(14px + env(safe-area-inset-bottom));
+    display:flex; align-items:center; justify-content:space-between;
+    transform:translateY(100%); transition:transform .25s ease;
+  }
+  #cartBar.visible{transform:translateY(0);}
+  #cartBar .totalWrap .label{font-size:11px; opacity:.6; text-transform:uppercase; letter-spacing:.08em;}
+  #cartBar .totalWrap .amount{font-family:'Fredoka',sans-serif; font-size:24px; font-weight:700; color:var(--butter);}
+  #cartBar button{
+    background:var(--jam); color:var(--cream); border:none; border-radius:14px;
+    padding:16px 28px; font-size:16px; font-weight:800; font-family:'Fredoka',sans-serif;
+    cursor:pointer; letter-spacing:.02em;
+  }
+  #cartBar button:active{background:var(--jam-dark);}
+
+  /* ---------- overlay states ---------- */
+  #overlay{
+    position:fixed; inset:0; background:var(--dough); z-index:60;
+    display:none; flex-direction:column; align-items:center; justify-content:center;
+    text-align:center; padding:24px;
+  }
+  #overlay.show{display:flex;}
+  .spinner{
+    width:64px; height:64px; border-radius:50%;
+    border:5px solid rgba(232,184,75,0.2); border-top-color:var(--butter);
+    animation:spin 0.9s linear infinite; margin-bottom:24px;
+  }
+  @keyframes spin{to{transform:rotate(360deg);}}
+  #overlay h2{font-size:26px; margin:0 0 8px;}
+  #overlay p{opacity:.7; font-size:15px; max-width:320px; margin:0 0 26px;}
+  #overlay .checkAmt{font-family:'Fredoka',sans-serif; font-size:38px; color:var(--butter); margin-bottom:6px;}
+  #overlay .successMark{
+    width:76px; height:76px; border-radius:50%; background:var(--ok);
+    display:flex; align-items:center; justify-content:center; margin-bottom:22px;
+    font-size:38px;
+  }
+  #overlay .failMark{
+    width:76px; height:76px; border-radius:50%; background:var(--jam);
+    display:flex; align-items:center; justify-content:center; margin-bottom:22px;
+    font-size:34px;
+  }
+  #overlay .ghostBtn{
+    margin-top:6px; background:transparent; border:1px solid var(--line); color:var(--cream);
+    padding:12px 22px; border-radius:12px; font-size:14px; cursor:pointer; font-family:'Nunito',sans-serif; font-weight:700;
+  }
+  #overlay .orderNum{font-size:13px; opacity:.55; margin-top:-14px; margin-bottom:20px;}
+</style>
+</head>
+<body>
+
+<button id="configBtn" onclick="document.getElementById('configPanel').classList.toggle('open')">⚙</button>
+<div id="configPanel">
+  <h3 style="margin:0 0 4px;">Setup</h3>
+  <p style="font-size:12px; opacity:.6; margin:0;">Enter your project values. Nothing here is saved anywhere except this tab's memory.</p>
+
+  <label>Supabase Project URL</label>
+  <input id="cfgSupaUrl" placeholder="https://xxxxx.supabase.co">
+
+  <label>Supabase Publishable Key</label>
+  <input id="cfgSupaKey" placeholder="sb_publishable_...">
+
+  <label>Power Automate — Create Checkout Flow URL</label>
+  <input id="cfgFlowUrl" placeholder="https://prod-xx...invoke?...">
+
+  <label>Truck</label>
+  <select id="cfgTruck">
+    <option value="van">Van</option>
+    <option value="trailer">Trailer</option>
+  </select>
+
+  <button onclick="saveConfig()" style="margin-top:18px; width:100%; padding:10px; border-radius:8px; border:none; background:var(--butter); color:var(--dough); font-weight:800; cursor:pointer;">Save</button>
+  <div class="savedNote" id="savedNote">Saved for this session ✓</div>
+</div>
+
+<header>
+  <div class="eyebrow">Let's Go Cookie Dough</div>
+  <h1>Build Your Order</h1>
+  <span class="truckTag" id="truckTag">VAN</span>
+</header>
+
+<main>
+  <div class="menuGrid" id="menuGrid"></div>
+</main>
+
+<div id="cartBar">
+  <div class="totalWrap">
+    <div class="label">Total</div>
+    <div class="amount" id="cartTotal">$0.00</div>
+  </div>
+  <button id="checkoutBtn" onclick="placeOrder()">Pay at Terminal</button>
+</div>
+
+<div id="overlay"></div>
+
+<script>
+const MENU = [
+  { id:'chocolate_chip', name:'Chocolate Chip', price:6.50 },
+  { id:'sugar', name:'Sugar Cookie', price:6.50 },
+  { id:'snickerdoodle', name:'Snickerdoodle', price:6.50 },
+  { id:'birthday_cake', name:'Birthday Cake', price:7.00 },
+  { id:'brownie_batter', name:'Brownie Batter', price:7.00 },
+];
+
+let cart = {};       // { itemId: qty }
+let config = { supaUrl:'', supaKey:'', flowUrl:'', truck:'van' };
+let currentOrderId = null;
+let pollTimer = null;
+let pollElapsed = 0;
+const POLL_INTERVAL = 2000;
+const POLL_TIMEOUT_MS = 90000;
+
+function saveConfig(){
+  config.supaUrl = document.getElementById('cfgSupaUrl').value.trim().replace(/\/$/,'');
+  config.supaKey = document.getElementById('cfgSupaKey').value.trim();
+  config.flowUrl = document.getElementById('cfgFlowUrl').value.trim();
+  config.truck   = document.getElementById('cfgTruck').value;
+  document.getElementById('truckTag').textContent = config.truck.toUpperCase();
+  const note = document.getElementById('savedNote');
+  note.style.display = 'block';
+  setTimeout(()=> note.style.display='none', 1800);
+}
+
+function renderMenu(){
+  const grid = document.getElementById('menuGrid');
+  grid.innerHTML = MENU.map(item => `
+    <div class="item">
+      <div class="info">
+        <div class="name">${item.name}</div>
+        <div class="price">$${item.price.toFixed(2)}</div>
+      </div>
+      <div class="stepper">
+        <button onclick="changeQty('${item.id}', -1)">−</button>
+        <span class="qty" id="qty-${item.id}">0</span>
+        <button class="plus" onclick="changeQty('${item.id}', 1)">+</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function changeQty(id, delta){
+  const current = cart[id] || 0;
+  const next = Math.max(0, current + delta);
+  if(next === 0) delete cart[id]; else cart[id] = next;
+  document.getElementById('qty-'+id).textContent = next;
+  updateCartBar();
+}
+
+function cartTotalAmount(){
+  return Object.entries(cart).reduce((sum,[id,qty])=>{
+    const item = MENU.find(m=>m.id===id);
+    return sum + (item ? item.price*qty : 0);
+  }, 0);
+}
+
+function updateCartBar(){
+  const total = cartTotalAmount();
+  const bar = document.getElementById('cartBar');
+  document.getElementById('cartTotal').textContent = '$'+total.toFixed(2);
+  bar.classList.toggle('visible', total > 0);
+}
+
+function showOverlay(html){
+  const o = document.getElementById('overlay');
+  o.innerHTML = html;
+  o.classList.add('show');
+}
+function hideOverlay(){
+  document.getElementById('overlay').classList.remove('show');
+}
+
+async function placeOrder(){
+  if(!config.supaUrl || !config.supaKey || !config.flowUrl){
+    alert('Fill in the setup panel (gear icon, top right) first.');
+    return;
+  }
+  const total = cartTotalAmount();
+  if(total <= 0) return;
+
+  showOverlay(`<div class="spinner"></div><h2>Sending order...</h2><p>Writing your order and starting checkout.</p>`);
+
+  const items = {};
+  Object.entries(cart).forEach(([id,qty])=> items[id]=qty);
+
+  try{
+    // 1. Write the order to Supabase
+    const insertRes = await fetch(`${config.supaUrl}/rest/v1/orders`, {
+      method:'POST',
+      headers:{
+        'apikey': config.supaKey,
+        'Authorization': 'Bearer '+config.supaKey,
+        'Content-Type':'application/json',
+        'Prefer':'return=representation'
+      },
+      body: JSON.stringify({
+        truck: config.truck,
+        items: items,
+        total_amount: total,
+        reference_id: crypto.randomUUID()
+      })
+    });
+    if(!insertRes.ok) throw new Error('Could not create order ('+insertRes.status+')');
+    const rows = await insertRes.json();
+    const order = rows[0];
+    currentOrderId = order.id;
+
+    // 2. Fire the checkout flow (Power Automate) with order id + amount
+    showOverlay(`
+      <div class="checkAmt">$${total.toFixed(2)}</div>
+      <div class="spinner"></div>
+      <h2>Tap, dip, or swipe</h2>
+      <p>Please pay on the terminal now.</p>
+      <div class="orderNum">Order ${order.id.slice(0,8)}</div>
+    `);
+
+    const flowRes = await fetch(config.flowUrl, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        order_id: order.reference_id,
+        amount: Math.round(total*100)
+      })
+    });
+    if(!flowRes.ok) throw new Error('Could not start checkout ('+flowRes.status+')');
+
+    startPolling(order.id, total);
+
+  } catch(err){
+    showOverlay(`
+      <div class="failMark">✕</div>
+      <h2>Something went wrong</h2>
+      <p>${err.message}</p>
+      <button class="ghostBtn" onclick="hideOverlay()">Try Again</button>
+    `);
+  }
+}
+
+function startPolling(orderId, total){
+  pollElapsed = 0;
+  clearInterval(pollTimer);
+  pollTimer = setInterval(async ()=>{
+    pollElapsed += POLL_INTERVAL;
+    if(pollElapsed >= POLL_TIMEOUT_MS){
+      clearInterval(pollTimer);
+      showOverlay(`
+        <div class="failMark">!</div>
+        <h2>Taking longer than expected</h2>
+        <p>Please see staff for help with your order.</p>
+        <button class="ghostBtn" onclick="resetKiosk()">Start Over</button>
+      `);
+      return;
+    }
+    try{
+      const res = await fetch(`${config.supaUrl}/rest/v1/orders?id=eq.${orderId}&select=status`, {
+        headers:{ 'apikey': config.supaKey, 'Authorization': 'Bearer '+config.supaKey }
+      });
+      const data = await res.json();
+      const status = data[0]?.status;
+      if(status === 'paid'){
+        clearInterval(pollTimer);
+        showOverlay(`
+          <div class="successMark">✓</div>
+          <h2>Order confirmed!</h2>
+          <p>We're making it now — grab a spot at the window.</p>
+          <button class="ghostBtn" onclick="resetKiosk()">New Order</button>
+        `);
+      } else if(status === 'canceled'){
+        clearInterval(pollTimer);
+        showOverlay(`
+          <div class="failMark">✕</div>
+          <h2>Payment didn't go through</h2>
+          <p>No charge was made. You can try again.</p>
+          <button class="ghostBtn" onclick="resetKiosk()">Try Again</button>
+        `);
+      }
+    } catch(e){ /* transient network hiccup, next poll will retry */ }
+  }, POLL_INTERVAL);
+}
+
+function resetKiosk(){
+  cart = {};
+  currentOrderId = null;
+  renderMenu();
+  updateCartBar();
+  hideOverlay();
+}
+
+renderMenu();
+</script>
+</body>
+</html>
