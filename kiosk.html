@@ -273,32 +273,14 @@
 
 <button id="configBtn" onclick="document.getElementById('configPanel').classList.toggle('open')">⚙</button>
 <div id="configPanel">
-  <h3 style="margin:0 0 4px;">Setup</h3>
-  <p style="font-size:12px; opacity:.6; margin:0;">Enter your project values. Nothing here is saved anywhere except this tab's memory.</p>
-
-  <label>Supabase Project URL</label>
-  <input id="cfgSupaUrl" placeholder="https://xxxxx.supabase.co">
-
-  <label>Supabase Publishable Key</label>
-  <input id="cfgSupaKey" placeholder="sb_publishable_...">
-
-  <label>Power Automate — Create Checkout Flow URL</label>
-  <input id="cfgFlowUrl" placeholder="https://prod-xx...invoke?...">
-
-  <label>Truck</label>
-  <select id="cfgTruck">
-    <option value="van">Van</option>
-    <option value="trailer">Trailer</option>
-  </select>
-
-  <label>Paired Square Terminal Device ID</label>
-  <input id="cfgDeviceId" placeholder="e.g. 9fa747a2-25ff-...">
+  <h3 style="margin:0 0 4px;">Today's Settings</h3>
+  <p style="font-size:12px; opacity:.6; margin:0;">Everything else is set in the file for this device.</p>
 
   <label>Sales Tax Rate (%) — set per event</label>
   <input id="cfgTaxRate" type="number" step="0.01" placeholder="e.g. 7.5">
 
   <button onclick="saveConfig()" style="margin-top:18px; width:100%; padding:10px; border-radius:8px; border:none; background:var(--butter); color:var(--dough); font-weight:800; cursor:pointer;">Save</button>
-  <div class="savedNote" id="savedNote">Saved for this session ✓</div>
+  <div class="savedNote" id="savedNote">Saved ✓</div>
 </div>
 
 <header>
@@ -359,10 +341,10 @@ const HARDCODED_CONFIG = {
   flowUrl:  '',   // Create Checkout flow URL
   truck:    '',   // 'van' or 'trailer'
   deviceId: '',   // this kiosk's paired Square Terminal device_id
-  taxRate:  0     // e.g. 7.5
+  taxRate:  0     // default tax rate — still adjustable per event via the gear icon
 };
 
-let config = { supaUrl:'', supaKey:'', flowUrl:'', truck:'van', deviceId:'', taxRate:0 };
+let config = { ...HARDCODED_CONFIG };
 let currentOrderId = null;
 let pollTimer = null;
 let pollElapsed = 0;
@@ -370,74 +352,39 @@ const POLL_INTERVAL = 2000;
 const POLL_TIMEOUT_MS = 90000;
 
 function saveConfig(){
-  config.supaUrl = document.getElementById('cfgSupaUrl').value.trim().replace(/\/$/,'');
-  config.supaKey = document.getElementById('cfgSupaKey').value.trim();
-  config.flowUrl = document.getElementById('cfgFlowUrl').value.trim();
-  config.truck   = document.getElementById('cfgTruck').value;
-  config.deviceId = document.getElementById('cfgDeviceId').value.trim();
   config.taxRate = Number(document.getElementById('cfgTaxRate').value) || 0;
-  document.getElementById('truckTag').textContent = config.truck.toUpperCase();
 
   try{
-    localStorage.setItem('lgcd-kiosk-config', JSON.stringify(config));
-  } catch(e){ /* storage unavailable — config still works for this session */ }
+    localStorage.setItem('lgcd-kiosk-taxrate', String(config.taxRate));
+  } catch(e){ /* storage unavailable — still works for this session */ }
 
   const note = document.getElementById('savedNote');
   note.style.display = 'block';
   setTimeout(()=> note.style.display='none', 1800);
-  loadMenu();
   updateCartBar();
 }
 
 function loadConfig(){
-  // Locked-device path: hardcoded config wins outright, no gear icon, no editing.
-  if(HARDCODED_CONFIG.supaUrl){
-    config = { ...config, ...HARDCODED_CONFIG };
-    document.getElementById('truckTag').textContent = (config.truck || 'van').toUpperCase();
-    const btn = document.getElementById('configBtn');
-    const panel = document.getElementById('configPanel');
-    if(btn) btn.remove();
-    if(panel) panel.remove();
-    return;
-  }
+  // Infrastructure values always come from the file itself, never from the browser.
+  config = { ...HARDCODED_CONFIG };
+  document.getElementById('truckTag').textContent = (config.truck || '?').toUpperCase();
 
+  // Tax rate is the one thing that legitimately changes daily — remembered per device.
   try{
-    const saved = localStorage.getItem('lgcd-kiosk-config');
-    if(saved) config = { ...config, ...JSON.parse(saved) };
-  } catch(e){ /* no saved config yet, or storage unavailable */ }
-
-  // URL params override saved config — lets each physical device be pre-configured
-  // e.g. kiosk.html?truck=van&device=ABC123 locks that device to Van + its paired terminal
-  const params = new URLSearchParams(window.location.search);
-  const urlTruck = params.get('truck');
-  const urlDevice = params.get('device');
-  if(urlTruck === 'van' || urlTruck === 'trailer') config.truck = urlTruck;
-  if(urlDevice) config.deviceId = urlDevice;
-
-  document.getElementById('cfgSupaUrl').value = config.supaUrl || '';
-  document.getElementById('cfgSupaKey').value = config.supaKey || '';
-  document.getElementById('cfgFlowUrl').value = config.flowUrl || '';
-  document.getElementById('cfgTruck').value = config.truck || 'van';
-  document.getElementById('cfgDeviceId').value = config.deviceId || '';
+    const savedRate = localStorage.getItem('lgcd-kiosk-taxrate');
+    if(savedRate !== null) config.taxRate = Number(savedRate) || 0;
+  } catch(e){ /* no saved rate yet, or storage unavailable */ }
   document.getElementById('cfgTaxRate').value = config.taxRate || '';
-  document.getElementById('truckTag').textContent = (config.truck || 'van').toUpperCase();
 
-  if(urlTruck === 'van' || urlTruck === 'trailer'){
-    const sel = document.getElementById('cfgTruck');
-    sel.disabled = true;
-    sel.title = 'Locked via URL for this device';
-  }
-  if(urlDevice){
-    const dev = document.getElementById('cfgDeviceId');
-    dev.disabled = true;
-    dev.title = 'Locked via URL for this device';
+  if(!config.supaUrl || !config.supaKey || !config.flowUrl || !config.truck || !config.deviceId){
+    console.warn('HARDCODED_CONFIG is incomplete — fill in supaUrl, supaKey, flowUrl, truck, and deviceId near the top of this file before deploying it to a device.');
   }
 }
 
 async function loadMenu(){
   const grid = document.getElementById('menuGrid');
   if(!config.supaUrl || !config.supaKey){
-    grid.innerHTML = '<p style="opacity:.55; text-align:center; padding:30px 10px;">Set up your project in the gear icon above to load the menu.</p>';
+    grid.innerHTML = '<p style="opacity:.55; text-align:center; padding:30px 10px;">This device isn\'t configured yet — fill in HARDCODED_CONFIG in the file.</p>';
     return;
   }
   try{
