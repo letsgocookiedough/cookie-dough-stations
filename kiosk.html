@@ -343,6 +343,25 @@
 let MENU = [];
 
 let cart = {};       // { itemId: qty }
+// ============================================================
+// PER-DEVICE CONFIG — fill this in before uploading a copy of this
+// file for a specific kiosk (e.g. kioskvan1.html, kiosktrailer2.html).
+// Once supaUrl is filled in below, this device locks to these exact
+// values, the gear icon disappears completely, and nobody touching
+// the tablet can see or change any of it.
+//
+// Leave everything blank to keep this as an editable/testing copy
+// with the normal gear-icon setup panel still available.
+// ============================================================
+const HARDCODED_CONFIG = {
+  supaUrl:  '',   // e.g. 'https://yybeoshbfutlaxcknbcw.supabase.co'
+  supaKey:  '',   // sb_publishable_...
+  flowUrl:  '',   // Create Checkout flow URL
+  truck:    '',   // 'van' or 'trailer'
+  deviceId: '',   // this kiosk's paired Square Terminal device_id
+  taxRate:  0     // e.g. 7.5
+};
+
 let config = { supaUrl:'', supaKey:'', flowUrl:'', truck:'van', deviceId:'', taxRate:0 };
 let currentOrderId = null;
 let pollTimer = null;
@@ -371,6 +390,17 @@ function saveConfig(){
 }
 
 function loadConfig(){
+  // Locked-device path: hardcoded config wins outright, no gear icon, no editing.
+  if(HARDCODED_CONFIG.supaUrl){
+    config = { ...config, ...HARDCODED_CONFIG };
+    document.getElementById('truckTag').textContent = (config.truck || 'van').toUpperCase();
+    const btn = document.getElementById('configBtn');
+    const panel = document.getElementById('configPanel');
+    if(btn) btn.remove();
+    if(panel) panel.remove();
+    return;
+  }
+
   try{
     const saved = localStorage.getItem('lgcd-kiosk-config');
     if(saved) config = { ...config, ...JSON.parse(saved) };
