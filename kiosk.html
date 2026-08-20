@@ -3,6 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<link rel="manifest" href="manifest.json">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#FBF6EC">
 <title>Let's Go Cookie Dough — Order</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@400;600;700;800&display=swap');
@@ -338,10 +341,11 @@ let cart = {};       // { itemId: qty }
 const HARDCODED_CONFIG = {
   supaUrl:  'https://yybeoshbfutlaxcknbcw.supabase.co',   // e.g. 'https://yybeoshbfutlaxcknbcw.supabase.co'
   supaKey:  'sb_publishable_w0fyA7GpxuV_DiIBNZ5Lxw_RPHBSMKW',   // sb_publishable_...
-  flowUrl:  'https://default43cd3e87970a40f698fb4f545be488.48.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/01/workflows/cf57289b5a904dfa8eed32636ac5852e/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=NLJKoOhk66mCMPs5uYRQtjV3cyHoMwffxJMvG_vAcTk',   // Create Checkout flow URL
+  flowUrl:  'https://default43cd3e87970a40f698fb4f545be488.48.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/01/workflows/cf57289b5a904dfa8eed32636ac5852e/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=NLJKoOhk66mCMPs5uYRQtjV3cyHoMwffxJMvG_vAcTk
+',   // Create Checkout flow URL
   truck:    'trailer',   // 'van' or 'trailer'
   deviceId: '235CS149B1002260',   // this kiosk's paired Square Terminal device_id
-  taxRate:  0     // default tax rate — still adjustable per event via the gear icon
+  taxRate:  7     // default tax rate — still adjustable per event via the gear icon
 };
 
 let config = { ...HARDCODED_CONFIG };
