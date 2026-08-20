@@ -336,12 +336,12 @@ let cart = {};       // { itemId: qty }
 // with the normal gear-icon setup panel still available.
 // ============================================================
 const HARDCODED_CONFIG = {
-  supaUrl:  '',   // e.g. 'https://yybeoshbfutlaxcknbcw.supabase.co'
-  supaKey:  '',   // sb_publishable_...
-  flowUrl:  '',   // Create Checkout flow URL
-  truck:    '',   // 'van' or 'trailer'
-  deviceId: '',   // this kiosk's paired Square Terminal device_id
-  taxRate:  0     // default tax rate — still adjustable per event via the gear icon
+  supaUrl:  'https://yybeoshbfutlaxcknbcw.supabase.co',   // e.g. 'https://yybeoshbfutlaxcknbcw.supabase.co'
+  supaKey:  'sb_publishable_w0fyA7GpxuV_DiIBNZ5Lxw_RPHBSMKW',   // sb_publishable_...
+  flowUrl:  'https://default43cd3e87970a40f698fb4f545be488.48.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/01/workflows/cf57289b5a904dfa8eed32636ac5852e/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=NLJKoOhk66mCMPs5uYRQtjV3cyHoMwffxJMvG_vAcTk',   // Create Checkout flow URL
+  truck:    'trailer',   // 'van' or 'trailer'
+  deviceId: '235CS149B1002260',   // this kiosk's paired Square Terminal device_id
+  taxRate:  0.07     // default tax rate — still adjustable per event via the gear icon
 };
 
 let config = { ...HARDCODED_CONFIG };
