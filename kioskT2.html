@@ -3,10 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<link rel="manifest" href="manifest.json">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="theme-color" content="#FBF6EC">
 <title>Let's Go Cookie Dough — Order</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Cookie Dough">
+<meta name="mobile-web-app-capable" content="yes">
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@400;600;700;800&display=swap');
 
@@ -346,7 +347,6 @@ const HARDCODED_CONFIG = {
   deviceId: '404CS149B6002631',   // this kiosk's paired Square Terminal device_id
   taxRate:  7     // default tax rate — still adjustable per event via the gear icon
 };
-
 let config = { ...HARDCODED_CONFIG };
 let currentOrderId = null;
 let pollTimer = null;
@@ -860,10 +860,14 @@ function startAutoReset(seconds){
 function startPolling(orderId, total, customerName){
   pollElapsed = 0;
   clearInterval(pollTimer);
+  try{
+    sessionStorage.setItem('lgcd-pending-order', JSON.stringify({ orderId, total, customerName, startedAt: Date.now() }));
+  } catch(e){}
   pollTimer = setInterval(async ()=>{
     pollElapsed += POLL_INTERVAL;
     if(pollElapsed >= POLL_TIMEOUT_MS){
       clearInterval(pollTimer);
+      try{ sessionStorage.removeItem('lgcd-pending-order'); } catch(e){}
       showOverlay(`
         <div class="failMark">!</div>
         <h2>Taking longer than expected</h2>
@@ -880,6 +884,7 @@ function startPolling(orderId, total, customerName){
       const status = data[0]?.status;
       if(status === 'paid'){
         clearInterval(pollTimer);
+        try{ sessionStorage.removeItem('lgcd-pending-order'); } catch(e){}
         showOverlay(`
           <div class="successMark">✓</div>
           <h2>Order confirmed, ${escapeHtml(customerName)}!</h2>
@@ -889,6 +894,7 @@ function startPolling(orderId, total, customerName){
         startAutoReset(6);
       } else if(status === 'canceled'){
         clearInterval(pollTimer);
+        try{ sessionStorage.removeItem('lgcd-pending-order'); } catch(e){}
         showOverlay(`
           <div class="failMark">✕</div>
           <h2>Payment didn't go through</h2>
@@ -910,8 +916,44 @@ function resetKiosk(){
   hideOverlay();
 }
 
+// iOS standalone home-screen apps can suspend or silently reload while the screen
+// is dimmed/locked or the app loses focus (e.g. while a customer taps their card
+// on the Terminal). These two checks catch up immediately instead of relying on
+// the poll interval alone, which iOS may have paused without any visible sign.
+
+document.addEventListener('visibilitychange', () => {
+  if(document.visibilityState === 'visible' && pollTimer){
+    // Force an immediate status check the moment the page is looked at again,
+    // rather than waiting for the next scheduled tick.
+    pollElapsed = Math.min(pollElapsed, POLL_TIMEOUT_MS - POLL_INTERVAL);
+  }
+});
+
+function tryResumePendingOrder(){
+  try{
+    const saved = sessionStorage.getItem('lgcd-pending-order');
+    if(!saved) return;
+    const pending = JSON.parse(saved);
+    const elapsedSinceStart = Date.now() - pending.startedAt;
+    if(elapsedSinceStart >= POLL_TIMEOUT_MS){
+      sessionStorage.removeItem('lgcd-pending-order');
+      return;
+    }
+    // Page reloaded (iOS silently killed the standalone app) mid-wait — pick up
+    // right where it left off instead of losing track of the order entirely.
+    showOverlay(`
+      <div class="spinner"></div>
+      <h2>Checking your order...</h2>
+      <p>One moment while we reconnect.</p>
+    `);
+    pollElapsed = elapsedSinceStart;
+    startPolling(pending.orderId, pending.total, pending.customerName);
+  } catch(e){ /* nothing to resume */ }
+}
+
 loadConfig();
 loadMenu();
+tryResumePendingOrder();
 </script>
 </body>
 </html>
