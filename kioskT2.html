@@ -1,0 +1,917 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<link rel="manifest" href="manifest.json">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#FBF6EC">
+<title>Let's Go Cookie Dough — Order</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@400;600;700;800&display=swap');
+
+  :root{
+    --dough:#FBF6EC;
+    --dough-2:#FFFFFF;
+    --cream:#1B2430;
+    --butter:#D9993D;
+    --sky:#8FC1DE;
+    --jam:#C1442E;
+    --jam-dark:#9C3320;
+    --ok:#5B8C5A;
+    --ink:#1B2430;
+    --line: rgba(27,36,48,0.14);
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    margin:0;
+    background:var(--dough);
+    color:var(--cream);
+    font-family:'Nunito',sans-serif;
+    -webkit-tap-highlight-color:transparent;
+    user-select:none;
+    overflow-x:hidden;
+  }
+  h1,h2,h3,.display{font-family:'Fredoka',sans-serif;}
+
+  /* ---------- config drawer ---------- */
+  #configBtn{
+    position:fixed; top:10px; right:10px; z-index:50;
+    width:34px; height:34px; border-radius:50%;
+    background:rgba(27,36,48,0.08); border:1px solid var(--line);
+    color:var(--cream); font-size:16px; cursor:pointer;
+  }
+  #configPanel{
+    position:fixed; top:0; right:0; height:100%; width:320px; max-width:88vw;
+    background:var(--dough-2); border-left:1px solid var(--line);
+    transform:translateX(100%); transition:transform .25s ease;
+    z-index:49; padding:60px 20px 20px; overflow-y:auto;
+  }
+  #configPanel.open{transform:translateX(0);}
+  #configPanel label{display:block; font-size:12px; opacity:.75; margin:14px 0 4px;}
+  #configPanel input, #configPanel select{
+    width:100%; padding:8px 10px; border-radius:8px; border:1px solid var(--line);
+    background:rgba(27,36,48,0.06); color:var(--cream); font-size:14px;
+  }
+  #configPanel .savedNote{font-size:12px; color:var(--ok); margin-top:10px; display:none;}
+
+  /* ---------- header ---------- */
+  header{
+    padding:16px 20px 10px; text-align:center; position:relative;
+  }
+  header .eyebrow{
+    font-size:12px; letter-spacing:.14em; text-transform:uppercase; opacity:.6;
+  }
+  header .logo{
+    max-width:min(190px, 40vw); width:100%; height:auto; display:block;
+    margin:0 auto; border-radius:8px;
+  }
+  header h1{
+    font-size:clamp(28px,5vw,40px); margin:4px 0 2px; font-weight:700;
+    color:#F7F1E3;
+    text-shadow:
+      -2px -2px 0 var(--ink), 2px -2px 0 var(--ink), -2px 2px 0 var(--ink), 2px 2px 0 var(--ink),
+      0 4px 0 var(--sky);
+  }
+  header .truckTag{
+    display:inline-block; margin-top:10px; padding:4px 14px; border-radius:20px;
+    background:rgba(143,193,222,0.25); border:1px solid rgba(143,193,222,0.6);
+    font-size:13px; font-weight:700; letter-spacing:.04em; color:var(--ink);
+  }
+
+  /* ---------- layout ---------- */
+  #appLayout{display:flex; align-items:flex-start;}
+  #menuArea{flex:1; min-width:0;}
+
+  /* ---------- menu ---------- */
+  main{max-width:900px; margin:0 auto; padding:10px 16px 160px;}
+  .menuGrid{
+    display:grid; grid-template-columns:repeat(auto-fill, minmax(240px,1fr));
+    gap:18px; margin-top:18px;
+  }
+  .item{
+    display:flex; flex-direction:column; overflow:hidden;
+    background:var(--dough-2); border:1px solid var(--line); border-radius:18px;
+  }
+  .item .thumb{
+    width:100%; aspect-ratio:4/3;
+    background-size:cover; background-position:center;
+    background-color:rgba(217,153,61,0.18);
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Fredoka',sans-serif; font-weight:700; font-size:44px; color:var(--ink);
+  }
+  .item .info{padding:14px 16px 6px;}
+  .item .info .name{font-family:'Fredoka',sans-serif; font-size:22px; font-weight:600;}
+  .item .info .price{font-size:16px; opacity:.7; margin-top:3px;}
+  .item .info .ingredients{font-size:14px; opacity:.65; margin-top:6px; line-height:1.5;}
+  .stepper{display:flex; align-items:center; justify-content:space-between; padding:10px 16px 16px; margin-top:auto;}
+  .stepper button{
+    width:58px; height:44px; border-radius:10px; border:none; cursor:pointer;
+    background:rgba(27,36,48,0.1); color:var(--cream); font-size:22px; font-weight:700;
+  }
+  .stepper button.plus{background:var(--butter); color:var(--ink);}
+  .stepper .qty{min-width:26px; text-align:center; font-weight:800; font-size:19px;}
+
+  /* ---------- persistent cart sidebar (wide screens) ---------- */
+  #cartPanel{
+    display:none; flex-direction:column;
+    width:340px; flex-shrink:0; height:100vh; position:sticky; top:0;
+    background:var(--dough-2); border-left:1px solid var(--line);
+    padding:80px 22px 22px; overflow-y:auto;
+  }
+  #cartPanel h2{margin:0 0 16px; font-size:22px; color:var(--cream);}
+  #cartPanelEmpty{opacity:.5; font-size:14px; margin-top:6px;}
+  .cartLine{
+    display:flex; align-items:center; gap:10px; padding:12px 0; border-bottom:1px solid var(--line);
+  }
+  .cartLine .cartLineName{flex:1; font-size:15px; font-weight:700;}
+  .cartLine .cartLineControls{display:flex; align-items:center; gap:8px;}
+  .cartLine .cartLineControls button{
+    width:28px; height:28px; border-radius:8px; border:none; cursor:pointer;
+    background:rgba(27,36,48,0.1); color:var(--cream); font-size:16px; font-weight:700;
+  }
+  .cartLine .cartLinePrice{font-size:14px; opacity:.75; min-width:48px; text-align:right;}
+  #cartPanelFooter{
+    position:sticky; top:0; background:var(--dough-2); z-index:2;
+    padding-bottom:16px; margin-bottom:6px; border-bottom:1px solid var(--line);
+  }
+  #cartPanelFooter .row{display:flex; justify-content:space-between; font-size:17px; margin-bottom:14px;}
+  #cartPanelFooter .row.subtle{font-size:14px; opacity:.65; margin-bottom:6px;}
+  #cartPanelFooter .row.subtle span:last-child{font-family:'Nunito',sans-serif; color:inherit; font-size:14px; font-weight:600;}
+  #cartPanelFooter .row span:last-child{font-family:'Fredoka',sans-serif; color:var(--butter); font-size:22px;}
+  #cartPanelFooter button{
+    width:100%; background:var(--butter); color:var(--ink); border:none; border-radius:14px;
+    padding:16px; font-size:16px; font-weight:800; font-family:'Fredoka',sans-serif; cursor:pointer;
+  }
+
+  @media (min-width:900px){
+    #cartPanel{display:flex;}
+    #cartBar{display:none !important;}
+    main{padding-bottom:60px;}
+  }
+
+  /* ---------- cart bar (narrow screens) ---------- */
+  #cartBar{
+    position:fixed; bottom:0; left:0; right:0; z-index:40;
+    background:var(--dough-2); border-top:1px solid var(--line);
+    padding:14px 18px calc(14px + env(safe-area-inset-bottom));
+    display:flex; align-items:center; justify-content:space-between;
+    transform:translateY(100%); transition:transform .25s ease;
+  }
+  #cartBar.visible{transform:translateY(0);}
+  #cartBar .row{display:flex; align-items:center; justify-content:space-between; gap:14px;}
+  #cartBar .totalWrap .label{font-size:11px; opacity:.6; text-transform:uppercase; letter-spacing:.08em;}
+  #cartBar .totalWrap .amount{font-family:'Fredoka',sans-serif; font-size:24px; font-weight:700; color:var(--butter);}
+  #cartBar button{
+    background:var(--butter); color:var(--ink); border:none; border-radius:14px;
+    padding:16px 28px; font-size:16px; font-weight:800; font-family:'Fredoka',sans-serif;
+    cursor:pointer; letter-spacing:.02em;
+  }
+  #cartBar button:active{opacity:.85;}
+
+  /* ---------- name prompt ---------- */
+  #namePrompt input{
+    width:100%; max-width:320px; padding:18px 20px; margin:0 0 22px;
+    border-radius:14px; border:2px solid var(--sky);
+    background:rgba(27,36,48,0.08); color:var(--cream);
+    font-size:22px; text-align:center; font-family:'Fredoka',sans-serif;
+  }
+  #namePrompt input::placeholder{color:rgba(27,36,48,0.4); font-size:17px;}
+  .continueBtn{
+    background:var(--butter); color:var(--ink); border:none; border-radius:14px;
+    padding:16px 40px; font-size:17px; font-weight:800; font-family:'Fredoka',sans-serif;
+    cursor:pointer; letter-spacing:.02em;
+  }
+  .continueBtn:disabled{opacity:.35;}
+  #namePrompt .skipHint{font-size:12px; opacity:.5; margin-top:16px;}
+  .namePromptActions{display:flex; gap:10px; justify-content:center; margin-top:14px;}
+  .namePromptActions .cancelBtn{border-color:rgba(193,68,46,0.5); color:var(--jam);}
+
+  /* ---------- payment choice ---------- */
+  #paymentChoice{max-width:480px;}
+  .paymentChoiceGrid{display:flex; gap:16px; justify-content:center; flex-wrap:wrap;}
+  .payOption{
+    width:180px; padding:28px 16px; border-radius:18px; border:2px solid var(--line);
+    background:var(--dough-2); color:var(--cream); cursor:pointer;
+    font-family:'Fredoka',sans-serif; font-size:17px; font-weight:700;
+  }
+  .payOption:active{border-color:var(--butter); background:rgba(217,153,61,0.1);}
+  .payOption .payIcon{font-size:44px; margin-bottom:10px;}
+
+  /* ---------- tip choice ---------- */
+  #tipChoice{max-width:460px;}
+  .tipGrid{display:flex; gap:12px; justify-content:center; flex-wrap:wrap; margin-bottom:18px;}
+  .tipOption{
+    width:100px; padding:18px 10px; border-radius:14px; border:2px solid var(--line);
+    background:var(--dough-2); color:var(--cream); cursor:pointer;
+    font-family:'Fredoka',sans-serif;
+  }
+  .tipOption.selected{border-color:var(--butter); background:rgba(217,153,61,0.15);}
+  .tipOption .tipPct{font-size:20px; font-weight:700;}
+  .tipOption .tipDollar{font-size:13px; opacity:.65; margin-top:4px;}
+  .tipCustomRow{
+    display:flex; align-items:center; gap:6px; justify-content:center; margin-bottom:22px;
+    font-size:18px; font-weight:700;
+  }
+  .tipCustomRow input{
+    width:140px; padding:12px 14px; border-radius:12px; border:1px solid var(--line);
+    background:var(--dough-2); color:var(--cream); font-size:16px; text-align:center;
+  }
+  .tipRoundNote{font-size:12px; opacity:.55; margin-top:10px;}
+
+  /* ---------- allergen warning ---------- */
+  #allergenPrompt{max-width:720px;}
+  #allergenPrompt .warnIcon{font-size:100px; margin-bottom:10px;}
+  #allergenPrompt h2{font-size:44px; margin-bottom:24px;}
+  #allergenPrompt .allergenLine{
+    text-align:left; background:rgba(193,68,46,0.14); border:2px solid rgba(193,68,46,0.4);
+    border-radius:18px; padding:22px 26px; margin:0 0 20px; font-size:24px;
+  }
+  #allergenPrompt .allergenLine strong{color:var(--jam); display:block; margin-bottom:6px; font-size:24px;}
+  #allergenPrompt .allergenActions{
+    display:flex; gap:16px; justify-content:center; margin-top:20px; flex-wrap:wrap;
+  }
+  #allergenPrompt .continueBtn{
+    padding:22px 48px; font-size:22px; border-radius:16px;
+  }
+  #allergenPrompt .ghostBtn{
+    padding:22px 40px; font-size:20px; border-radius:16px;
+  }
+
+  /* ---------- overlay states ---------- */
+  #overlay{
+    position:fixed; inset:0; background:var(--dough); z-index:60;
+    display:none; flex-direction:column; align-items:center; justify-content:center;
+    text-align:center; padding:24px;
+  }
+  #overlay.show{display:flex;}
+  .spinner{
+    width:64px; height:64px; border-radius:50%;
+    border:5px solid rgba(232,184,75,0.2); border-top-color:var(--butter);
+    animation:spin 0.9s linear infinite; margin-bottom:24px;
+  }
+  @keyframes spin{to{transform:rotate(360deg);}}
+  #overlay h2{font-size:26px; margin:0 0 8px;}
+  #overlay p{opacity:.7; font-size:15px; max-width:320px; margin:0 0 26px;}
+  #overlay .checkAmt{font-family:'Fredoka',sans-serif; font-size:38px; color:var(--butter); margin-bottom:6px;}
+  #overlay .successMark{
+    width:76px; height:76px; border-radius:50%; background:var(--ok);
+    display:flex; align-items:center; justify-content:center; margin-bottom:22px;
+    font-size:38px;
+  }
+  #overlay .failMark{
+    width:76px; height:76px; border-radius:50%; background:var(--jam);
+    display:flex; align-items:center; justify-content:center; margin-bottom:22px;
+    font-size:34px;
+  }
+  #overlay .ghostBtn{
+    margin-top:6px; background:transparent; border:1px solid var(--line); color:var(--cream);
+    padding:12px 22px; border-radius:12px; font-size:14px; cursor:pointer; font-family:'Nunito',sans-serif; font-weight:700;
+  }
+  #overlay .orderNum{font-size:13px; opacity:.55; margin-top:-14px; margin-bottom:20px;}
+</style>
+</head>
+<body>
+
+<button id="configBtn" onclick="openSettings()">⚙</button>
+<div id="configPanel">
+  <h3 style="margin:0 0 4px;">Today's Settings</h3>
+  <p style="font-size:12px; opacity:.6; margin:0;">Everything else is set in the file for this device.</p>
+
+  <label>Sales Tax Rate (%) — set per event</label>
+  <input id="cfgTaxRate" type="number" step="0.01" placeholder="e.g. 7.5">
+
+  <button onclick="saveConfig()" style="margin-top:18px; width:100%; padding:10px; border-radius:8px; border:none; background:var(--butter); color:var(--dough); font-weight:800; cursor:pointer;">Save</button>
+  <div class="savedNote" id="savedNote">Saved ✓</div>
+</div>
+
+<header>
+  <img src="logo.jpg" alt="Let's Go Cookie Dough" class="logo">
+  <h1>Build Your Order</h1>
+  <span class="truckTag" id="truckTag">VAN</span>
+</header>
+
+<div id="appLayout">
+  <div id="menuArea">
+    <main>
+      <div class="menuGrid" id="menuGrid"></div>
+    </main>
+  </div>
+
+  <aside id="cartPanel">
+    <h2>Your Order</h2>
+    <div id="cartPanelFooter">
+      <div class="row subtle"><span>Pre-Tax Subtotal</span><span id="cartPanelSubtotal">$0.00</span></div>
+      <div class="row subtle"><span>Tax (included)</span><span id="cartPanelTax">$0.00</span></div>
+      <div class="row"><span>Total</span><span id="cartPanelTotal">$0.00</span></div>
+      <button onclick="checkAllergensAndProceed()">Checkout</button>
+    </div>
+    <div id="cartPanelItems"></div>
+    <div id="cartPanelEmpty">Nothing yet — tap + on any item to add it.</div>
+  </aside>
+</div>
+
+<div id="cartBar">
+  <div class="row">
+    <div class="totalWrap">
+      <div class="label">Total</div>
+      <div class="amount" id="cartTotal">$0.00</div>
+    </div>
+    <button id="checkoutBtn" onclick="checkAllergensAndProceed()">Checkout</button>
+  </div>
+</div>
+
+<div id="overlay"></div>
+
+<script>
+let MENU = [];
+
+let cart = {};       // { itemId: qty }
+// ============================================================
+// PER-DEVICE CONFIG — fill this in before uploading a copy of this
+// file for a specific kiosk (e.g. kioskvan1.html, kiosktrailer2.html).
+// Once supaUrl is filled in below, this device locks to these exact
+// values, the gear icon disappears completely, and nobody touching
+// the tablet can see or change any of it.
+//
+// Leave everything blank to keep this as an editable/testing copy
+// with the normal gear-icon setup panel still available.
+// ============================================================
+const HARDCODED_CONFIG = {
+  supaUrl:  'https://yybeoshbfutlaxcknbcw.supabase.co',   // e.g. 'https://yybeoshbfutlaxcknbcw.supabase.co'
+  supaKey:  'sb_publishable_w0fyA7GpxuV_DiIBNZ5Lxw_RPHBSMKW',   // sb_publishable_...
+  flowUrl:  'https://default43cd3e87970a40f698fb4f545be488.48.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/01/workflows/cf57289b5a904dfa8eed32636ac5852e/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=NLJKoOhk66mCMPs5uYRQtjV3cyHoMwffxJMvG_vAcTk',   // Create Checkout flow URL
+  truck:    'trailer',   // 'van' or 'trailer'
+  deviceId: '404CS149B6002631',   // this kiosk's paired Square Terminal device_id
+  taxRate:  7     // default tax rate — still adjustable per event via the gear icon
+};
+
+let config = { ...HARDCODED_CONFIG };
+let currentOrderId = null;
+let pollTimer = null;
+let pollElapsed = 0;
+const POLL_INTERVAL = 2000;
+const POLL_TIMEOUT_MS = 90000;
+
+const SETTINGS_PIN = '3995';
+function openSettings(){
+  const panel = document.getElementById('configPanel');
+  if(panel.classList.contains('open')){
+    panel.classList.remove('open');
+    return;
+  }
+  const entered = prompt('Staff PIN:');
+  if(entered === null) return; // cancelled
+  if(entered !== SETTINGS_PIN){
+    alert('Incorrect PIN.');
+    return;
+  }
+  panel.classList.add('open');
+}
+
+function saveConfig(){
+  config.taxRate = Number(document.getElementById('cfgTaxRate').value) || 0;
+
+  try{
+    localStorage.setItem('lgcd-kiosk-taxrate', String(config.taxRate));
+  } catch(e){ /* storage unavailable — still works for this session */ }
+
+  const note = document.getElementById('savedNote');
+  note.style.display = 'block';
+  setTimeout(()=> note.style.display='none', 1800);
+  updateCartBar();
+}
+
+function loadConfig(){
+  // Infrastructure values always come from the file itself, never from the browser.
+  config = { ...HARDCODED_CONFIG };
+  document.getElementById('truckTag').textContent = (config.truck || '?').toUpperCase();
+
+  // Tax rate is the one thing that legitimately changes daily — remembered per device.
+  try{
+    const savedRate = localStorage.getItem('lgcd-kiosk-taxrate');
+    if(savedRate !== null) config.taxRate = Number(savedRate) || 0;
+  } catch(e){ /* no saved rate yet, or storage unavailable */ }
+  document.getElementById('cfgTaxRate').value = config.taxRate || '';
+
+  if(!config.supaUrl || !config.supaKey || !config.flowUrl || !config.truck || !config.deviceId){
+    console.warn('HARDCODED_CONFIG is incomplete — fill in supaUrl, supaKey, flowUrl, truck, and deviceId near the top of this file before deploying it to a device.');
+  }
+}
+
+async function loadMenu(){
+  const grid = document.getElementById('menuGrid');
+  if(!config.supaUrl || !config.supaKey){
+    grid.innerHTML = '<p style="opacity:.55; text-align:center; padding:30px 10px;">This device isn\'t configured yet — fill in HARDCODED_CONFIG in the file.</p>';
+    return;
+  }
+  try{
+    const res = await fetch(`${config.supaUrl}/rest/v1/menu_items?select=*&order=sort_order.asc`, {
+      headers:{ 'apikey': config.supaKey, 'Authorization': 'Bearer '+config.supaKey }
+    });
+    if(!res.ok) throw new Error();
+    const rows = await res.json();
+    const truck = config.truck === 'trailer' ? 'trailer' : 'van';
+    MENU = rows
+      .filter(r => r['available_'+truck])
+      .map(r => ({
+        id:r.id, name:r.name, price:Number(r['price_'+truck]),
+        ingredients:r.ingredients || '', allergenWarning:r.allergen_warning || '',
+        imageUrl:r.image_url || ''
+      }));
+    renderMenu();
+  } catch(e){
+    grid.innerHTML = '<p style="opacity:.55; text-align:center; padding:30px 10px;">Could not load the menu. Check your setup values.</p>';
+  }
+}
+
+function renderMenu(){
+  const grid = document.getElementById('menuGrid');
+  grid.innerHTML = MENU.map(item => `
+    <div class="item">
+      <div class="thumb" style="${item.imageUrl ? `background-image:url('${item.imageUrl}')` : ''}">
+        ${item.imageUrl ? '' : escapeHtml((item.name||'?').charAt(0))}
+      </div>
+      <div class="info">
+        <div class="name">${item.name}</div>
+        <div class="price">$${item.price.toFixed(2)}</div>
+        ${item.ingredients ? `<div class="ingredients">${escapeHtml(item.ingredients)}</div>` : ''}
+      </div>
+      <div class="stepper">
+        <button onclick="changeQty('${item.id}', -1)">−</button>
+        <span class="qty" id="qty-${item.id}">0</span>
+        <button class="plus" onclick="changeQty('${item.id}', 1)">+</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function changeQty(id, delta){
+  const current = cart[id] || 0;
+  const next = Math.max(0, current + delta);
+  if(next === 0) delete cart[id]; else cart[id] = next;
+  document.getElementById('qty-'+id).textContent = next;
+  updateCartBar();
+}
+
+function cartTotalAmount(){
+  return Object.entries(cart).reduce((sum,[id,qty])=>{
+    const item = MENU.find(m=>m.id===id);
+    return sum + (item ? item.price*qty : 0);
+  }, 0);
+}
+
+// Menu prices are tax-inclusive — the customer pays exactly this, nothing added.
+function grandTotal(){
+  return Math.round(cartTotalAmount() * 100) / 100;
+}
+
+// Backs the tax portion out of the inclusive price, for record-keeping only —
+// this never changes what the customer is charged.
+function preTaxSubtotal(){
+  const rate = Number(config.taxRate)||0;
+  if(rate <= 0) return grandTotal();
+  return Math.round((grandTotal() / (1 + rate/100)) * 100) / 100;
+}
+
+function taxAmount(){
+  return Math.round((grandTotal() - preTaxSubtotal()) * 100) / 100;
+}
+
+function updateCartBar(){
+  const total = grandTotal();
+  const bar = document.getElementById('cartBar');
+  document.getElementById('cartTotal').textContent = '$'+total.toFixed(2);
+  bar.classList.toggle('visible', total > 0);
+  renderCartPanel();
+}
+
+function renderCartPanel(){
+  const wrap = document.getElementById('cartPanelItems');
+  const empty = document.getElementById('cartPanelEmpty');
+  const entries = Object.entries(cart);
+
+  if(entries.length === 0){
+    wrap.innerHTML = '';
+    empty.style.display = 'block';
+  } else {
+    empty.style.display = 'none';
+    wrap.innerHTML = entries.map(([id,qty])=>{
+      const item = MENU.find(m=>m.id===id);
+      if(!item) return '';
+      return `
+        <div class="cartLine">
+          <div class="cartLineName">${escapeHtml(item.name)}</div>
+          <div class="cartLineControls">
+            <button onclick="changeQty('${id}', -1)">−</button>
+            <span>${qty}</span>
+            <button onclick="changeQty('${id}', 1)">+</button>
+          </div>
+          <div class="cartLinePrice">$${(item.price*qty).toFixed(2)}</div>
+        </div>
+      `;
+    }).join('');
+  }
+  document.getElementById('cartPanelSubtotal').textContent = '$'+preTaxSubtotal().toFixed(2);
+  document.getElementById('cartPanelTax').textContent = '$'+taxAmount().toFixed(2);
+  document.getElementById('cartPanelTotal').textContent = '$'+grandTotal().toFixed(2);
+}
+
+function showOverlay(html){
+  const o = document.getElementById('overlay');
+  o.innerHTML = html;
+  o.classList.add('show');
+}
+function hideOverlay(){
+  document.getElementById('overlay').classList.remove('show');
+}
+
+function checkAllergensAndProceed(){
+  const total = cartTotalAmount();
+  if(total <= 0) return;
+
+  const flagged = Object.keys(cart)
+    .map(id => MENU.find(m => m.id === id))
+    .filter(item => item && item.allergenWarning);
+
+  if(flagged.length > 0){
+    showAllergenWarning(flagged);
+  } else {
+    showNamePrompt();
+  }
+}
+
+function showAllergenWarning(flaggedItems){
+  showOverlay(`
+    <div id="allergenPrompt">
+      <div class="warnIcon">⚠️</div>
+      <h2 style="margin-bottom:14px;">Allergen Notice</h2>
+      ${flaggedItems.map(item => `
+        <div class="allergenLine">
+          <strong>${escapeHtml(item.name)}</strong>
+          ${escapeHtml(item.allergenWarning)}
+        </div>
+      `).join('')}
+      <div class="allergenActions">
+        <button class="continueBtn" onclick="showNamePrompt()">I Understand, Continue</button>
+        <button class="ghostBtn" onclick="hideOverlay()">Go Back</button>
+      </div>
+    </div>
+  `);
+}
+
+function showNamePrompt(){
+  const total = cartTotalAmount();
+  if(total <= 0) return;
+
+  showOverlay(`
+    <div id="namePrompt">
+      <h2 style="margin-bottom:6px;">What's your name?</h2>
+      <p style="margin-bottom:20px;">So we can call your order when it's ready.</p>
+      <input id="nameInput" type="text" placeholder="First name" maxlength="30" autocomplete="off" autocapitalize="words">
+      <br>
+      <button class="continueBtn" id="nameContinueBtn" disabled onclick="confirmName()">Continue to Payment</button>
+      <div class="namePromptActions">
+        <button class="ghostBtn" onclick="hideOverlay()">Go Back</button>
+        <button class="ghostBtn cancelBtn" onclick="resetKiosk()">Cancel Order</button>
+      </div>
+      <div class="skipHint">$${grandTotal().toFixed(2)} total (incl. tax)</div>
+    </div>
+  `);
+
+  const input = document.getElementById('nameInput');
+  const btn = document.getElementById('nameContinueBtn');
+  input.addEventListener('input', ()=>{ btn.disabled = input.value.trim().length === 0; });
+  input.addEventListener('keydown', (e)=>{ if(e.key === 'Enter' && input.value.trim()) confirmName(); });
+  // Autofocus opens the on-screen keyboard on a touchscreen kiosk
+  setTimeout(()=> input.focus(), 150);
+}
+
+function confirmName(){
+  const input = document.getElementById('nameInput');
+  const customerName = input.value.trim();
+  if(!customerName) return;
+  showPaymentChoice(customerName);
+}
+
+function showPaymentChoice(customerName){
+  showOverlay(`
+    <div id="paymentChoice">
+      <h2 style="margin-bottom:6px;">How would you like to pay, ${escapeHtml(customerName)}?</h2>
+      <p style="margin-bottom:24px;">$${grandTotal().toFixed(2)} total (incl. tax)</p>
+      <div class="paymentChoiceGrid">
+        <button class="payOption" onclick="showTipChoice('${escapeHtml(customerName).replace(/'/g,"\\'")}', 'card')">
+          <div class="payIcon">💳</div>
+          <div>Pay by Card</div>
+        </button>
+        <button class="payOption" onclick="showTipChoice('${escapeHtml(customerName).replace(/'/g,"\\'")}', 'cash')">
+          <div class="payIcon">💵</div>
+          <div>Pay Cash at Pickup</div>
+        </button>
+      </div>
+      <div class="namePromptActions">
+        <button class="ghostBtn" onclick="hideOverlay()">Go Back</button>
+        <button class="ghostBtn cancelBtn" onclick="resetKiosk()">Cancel Order</button>
+      </div>
+    </div>
+  `);
+}
+
+let tipContextPaymentMethod = 'card';
+
+function roundToQuarter(amount){
+  return Math.round(amount / 0.25) * 0.25;
+}
+
+function showTipChoice(customerName, paymentMethod){
+  tipContextPaymentMethod = paymentMethod;
+  const base = preTaxSubtotal(); // tip suggestions are based on pre-tax total, never on tax
+  const orderTotal = grandTotal();
+
+  function displayAmount(rawTip){
+    if(paymentMethod !== 'cash' || rawTip === 0) return rawTip;
+    // Show the actual tip that results once the cash total rounds to the nearest quarter
+    return Math.round((roundToQuarter(orderTotal + rawTip) - orderTotal) * 100) / 100;
+  }
+
+  const options = [
+    { label:'No Tip', amount:0 },
+    { label:'15%', amount:displayAmount(Math.round(base*0.15*100)/100) },
+    { label:'20%', amount:displayAmount(Math.round(base*0.20*100)/100) },
+    { label:'25%', amount:displayAmount(Math.round(base*0.25*100)/100) }
+  ];
+  const namesc = escapeHtml(customerName).replace(/'/g,"\\'");
+  showOverlay(`
+    <div id="tipChoice">
+      <h2 style="margin-bottom:6px;">Add a tip?</h2>
+      <p style="margin-bottom:22px;">100% goes to the crew — thank you!</p>
+      <div class="tipGrid">
+        ${options.map(o => `
+          <button class="tipOption" onclick="selectTip(${o.amount}, this)">
+            <div class="tipPct">${o.label}</div>
+            ${o.amount > 0 ? `<div class="tipDollar">$${o.amount.toFixed(2)}</div>` : ''}
+          </button>
+        `).join('')}
+      </div>
+      <div class="tipCustomRow">
+        <span>$</span>
+        <input id="customTipInput" type="number" min="0" step="0.25" placeholder="Custom amount" oninput="selectCustomTip(this.value)">
+      </div>
+      <button class="continueBtn" id="tipContinueBtn" onclick="confirmTip('${namesc}', '${paymentMethod}')">Continue to Payment</button>
+      ${paymentMethod === 'cash' ? '<div class="tipRoundNote">*Cash total rounds to the nearest quarter</div>' : ''}
+      <div class="namePromptActions">
+        <button class="ghostBtn" onclick="showPaymentChoice('${namesc}')">Go Back</button>
+        <button class="ghostBtn cancelBtn" onclick="resetKiosk()">Cancel Order</button>
+      </div>
+    </div>
+  `);
+  selectTip(0, document.querySelector('.tipOption')); // default to No Tip selected
+}
+
+let selectedTip = 0;
+function selectTip(amount, btnEl){
+  selectedTip = amount;
+  document.getElementById('customTipInput').value = '';
+  document.querySelectorAll('.tipOption').forEach(b => b.classList.remove('selected'));
+  if(btnEl) btnEl.classList.add('selected');
+  updateTipContinueLabel();
+}
+function selectCustomTip(value){
+  selectedTip = Math.max(0, Number(value) || 0);
+  document.querySelectorAll('.tipOption').forEach(b => b.classList.remove('selected'));
+  updateTipContinueLabel();
+}
+function updateTipContinueLabel(){
+  const rawGrand = grandTotal() + selectedTip;
+  const displayTotal = tipContextPaymentMethod === 'cash' ? roundToQuarter(rawGrand) : rawGrand;
+  document.getElementById('tipContinueBtn').textContent = `Continue — $${displayTotal.toFixed(2)} total`;
+}
+function confirmTip(customerName, paymentMethod){
+  if(paymentMethod === 'cash'){
+    placeCashOrder(customerName, selectedTip);
+  } else {
+    placeOrder(customerName, 'card', selectedTip);
+  }
+}
+
+async function placeCashOrder(customerName, tipAmount){
+  if(!config.supaUrl || !config.supaKey){
+    alert('Fill in the setup panel (gear icon, top right) first.');
+    return;
+  }
+  const subtotal = preTaxSubtotal();
+  const tax = taxAmount();
+  const orderTotal = grandTotal();
+  const rawTip = Math.round((tipAmount||0) * 100) / 100;
+  const rawTotal = orderTotal + rawTip;
+  const total = Math.round(roundToQuarter(rawTotal) * 100) / 100;  // cash drawer only has quarters and up
+  const tip = Math.round((total - orderTotal) * 100) / 100;        // tip absorbs the rounding difference
+  if(total <= 0) return;
+
+  showOverlay(`<div class="spinner"></div><h2>Sending order...</h2><p>Writing your order.</p>`);
+
+  const items = {};
+  Object.entries(cart).forEach(([id,qty])=> items[id]=qty);
+
+  try{
+    const insertRes = await fetch(`${config.supaUrl}/rest/v1/orders`, {
+      method:'POST',
+      headers:{
+        'apikey': config.supaKey,
+        'Authorization': 'Bearer '+config.supaKey,
+        'Content-Type':'application/json',
+        'Prefer':'return=representation'
+      },
+      body: JSON.stringify({
+        truck: config.truck,
+        items: items,
+        subtotal_amount: subtotal,
+        tax_rate: Number(config.taxRate)||0,
+        tax_amount: tax,
+        tip_amount: tip,
+        total_amount: total,
+        customer_name: customerName,
+        reference_id: crypto.randomUUID(),
+        status: 'paid',
+        payment_method: 'cash',
+        payment_status: 'CASH_PENDING'
+      })
+    });
+    if(!insertRes.ok) throw new Error('Could not create order ('+insertRes.status+')');
+
+    showOverlay(`
+      <div class="successMark">✓</div>
+      <h2>Order confirmed, ${escapeHtml(customerName)}!</h2>
+      <p>Pay $${total.toFixed(2)} cash at the window when we call your name.</p>
+      <button class="ghostBtn" onclick="resetKiosk()">New Order Now</button>
+    `);
+    startAutoReset(7);
+
+  } catch(err){
+    showOverlay(`
+      <div class="failMark">✕</div>
+      <h2>Something went wrong</h2>
+      <p>${err.message}</p>
+      <button class="ghostBtn" onclick="hideOverlay()">Try Again</button>
+    `);
+  }
+}
+
+async function placeOrder(customerName, paymentMethod, tipAmount){
+  if(!config.supaUrl || !config.supaKey || !config.flowUrl){
+    alert('Fill in the setup panel (gear icon, top right) first.');
+    return;
+  }
+  const subtotal = preTaxSubtotal();
+  const tax = taxAmount();
+  const orderTotal = grandTotal();     // menu total, tax included, tip NOT included
+  const tip = Math.round((tipAmount||0) * 100) / 100;
+  const total = Math.round((orderTotal + tip) * 100) / 100;  // the actual amount charged
+  if(total <= 0) return;
+
+  showOverlay(`<div class="spinner"></div><h2>Sending order...</h2><p>Writing your order and starting checkout.</p>`);
+
+  const items = {};
+  Object.entries(cart).forEach(([id,qty])=> items[id]=qty);
+
+  try{
+    // 1. Write the order to Supabase
+    const insertRes = await fetch(`${config.supaUrl}/rest/v1/orders`, {
+      method:'POST',
+      headers:{
+        'apikey': config.supaKey,
+        'Authorization': 'Bearer '+config.supaKey,
+        'Content-Type':'application/json',
+        'Prefer':'return=representation'
+      },
+      body: JSON.stringify({
+        truck: config.truck,
+        items: items,
+        subtotal_amount: subtotal,
+        tax_rate: Number(config.taxRate)||0,
+        tax_amount: tax,
+        tip_amount: tip,
+        total_amount: total,
+        customer_name: customerName,
+        reference_id: crypto.randomUUID(),
+        payment_method: paymentMethod || 'card'
+      })
+    });
+    if(!insertRes.ok) throw new Error('Could not create order ('+insertRes.status+')');
+    const rows = await insertRes.json();
+    const order = rows[0];
+    currentOrderId = order.id;
+
+    // 2. Fire the checkout flow (Power Automate) with order id, amount, and tip
+    showOverlay(`
+      <div class="checkAmt">$${total.toFixed(2)}</div>
+      <div class="spinner"></div>
+      <h2>Tap, dip, or swipe</h2>
+      <p>Please pay on the terminal now.</p>
+      <div class="orderNum">Order ${order.id.slice(0,8)}</div>
+    `);
+
+    const flowRes = await fetch(config.flowUrl, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        order_id: order.reference_id,
+        amount: Math.round(total*100),
+        tip_amount: Math.round(tip*100),
+        device_id: config.deviceId
+      })
+    });
+    if(!flowRes.ok) throw new Error('Could not start checkout ('+flowRes.status+')');
+
+    startPolling(order.id, total, customerName);
+
+  } catch(err){
+    showOverlay(`
+      <div class="failMark">✕</div>
+      <h2>Something went wrong</h2>
+      <p>${err.message}</p>
+      <button class="ghostBtn" onclick="hideOverlay()">Try Again</button>
+    `);
+  }
+}
+
+function escapeHtml(str){
+  const d = document.createElement('div');
+  d.textContent = str;
+  return d.innerHTML;
+}
+
+let autoResetTimer = null;
+function startAutoReset(seconds){
+  clearTimeout(autoResetTimer);
+  let remaining = seconds;
+  const tick = () => {
+    const btn = document.querySelector('#overlay .ghostBtn');
+    const base = document.querySelector('#overlay .ghostBtnLabel')?.textContent || null;
+    if(btn) btn.textContent = btn.textContent.replace(/\s*\(\d+\)$/,'') + ` (${remaining})`;
+    if(remaining <= 0){ resetKiosk(); return; }
+    remaining -= 1;
+    autoResetTimer = setTimeout(tick, 1000);
+  };
+  tick();
+}
+
+function startPolling(orderId, total, customerName){
+  pollElapsed = 0;
+  clearInterval(pollTimer);
+  pollTimer = setInterval(async ()=>{
+    pollElapsed += POLL_INTERVAL;
+    if(pollElapsed >= POLL_TIMEOUT_MS){
+      clearInterval(pollTimer);
+      showOverlay(`
+        <div class="failMark">!</div>
+        <h2>Taking longer than expected</h2>
+        <p>Please see staff for help with your order.</p>
+        <button class="ghostBtn" onclick="resetKiosk()">Start Over</button>
+      `);
+      return;
+    }
+    try{
+      const res = await fetch(`${config.supaUrl}/rest/v1/orders?id=eq.${orderId}&select=status`, {
+        headers:{ 'apikey': config.supaKey, 'Authorization': 'Bearer '+config.supaKey }
+      });
+      const data = await res.json();
+      const status = data[0]?.status;
+      if(status === 'paid'){
+        clearInterval(pollTimer);
+        showOverlay(`
+          <div class="successMark">✓</div>
+          <h2>Order confirmed, ${escapeHtml(customerName)}!</h2>
+          <p>We're making it now — grab a spot at the window.</p>
+          <button class="ghostBtn" onclick="resetKiosk()">New Order Now</button>
+        `);
+        startAutoReset(6);
+      } else if(status === 'canceled'){
+        clearInterval(pollTimer);
+        showOverlay(`
+          <div class="failMark">✕</div>
+          <h2>Payment didn't go through</h2>
+          <p>No charge was made. You can try again.</p>
+          <button class="ghostBtn" onclick="resetKiosk()">Try Again Now</button>
+        `);
+        startAutoReset(8);
+      }
+    } catch(e){ /* transient network hiccup, next poll will retry */ }
+  }, POLL_INTERVAL);
+}
+
+function resetKiosk(){
+  clearTimeout(autoResetTimer);
+  cart = {};
+  currentOrderId = null;
+  renderMenu();
+  updateCartBar();
+  hideOverlay();
+}
+
+loadConfig();
+loadMenu();
+</script>
+</body>
+</html>
