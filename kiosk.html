@@ -8,7 +8,31 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Cookie Dough">
 <meta name="mobile-web-app-capable" content="yes">
-<link rel="manifest" href="manifest.json">
+<link rel="manifest" href="manifest.json" id="dynamicManifest">
+<script>
+  // The static manifest.json is just a fallback. This builds a real one on the fly,
+  // using whatever URL is actually open — so each device's ?device=... parameter
+  // survives being "Added to Home Screen", instead of every icon launching back
+  // to a bare, unconfigured page.
+  (function(){
+    try{
+      var manifest = {
+        name: "Let's Go Cookie Dough - Kiosk",
+        short_name: "Cookie Dough",
+        start_url: window.location.href,
+        display: "standalone",
+        background_color: "#FBF6EC",
+        theme_color: "#1B2430",
+        icons: [
+          { src: new URL('icon-192.png', window.location.href).href, sizes: "192x192", type: "image/png" },
+          { src: new URL('icon-512.png', window.location.href).href, sizes: "512x512", type: "image/png" }
+        ]
+      };
+      var blob = new Blob([JSON.stringify(manifest)], { type: 'application/json' });
+      document.getElementById('dynamicManifest').setAttribute('href', URL.createObjectURL(blob));
+    } catch(e){ /* falls back to the static manifest.json if this fails */ }
+  })();
+</script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@400;600;700;800&display=swap');
 
