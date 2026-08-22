@@ -236,7 +236,13 @@
   <div id="emptyState" style="display:none;"></div>
 </div>
 
-<div id="totalsView"></div>
+<div id="totalsView">
+  <div id="totalsLiveStats"></div>
+  <div class="compareHeading">How today compares</div>
+  <div class="compareRow" id="compareRow">
+    <div class="compLoading">Loading…</div>
+  </div>
+</div>
 
 <script>
 let MENU_NAMES = {};
@@ -400,6 +406,7 @@ function switchTab(tab){
   document.getElementById('tabTotals').classList.toggle('active', tab==='totals');
   document.getElementById('railWrap').style.display = (tab==='totals') ? 'none' : 'block';
   document.getElementById('totalsView').style.display = (tab==='totals') ? 'block' : 'none';
+  if(tab === 'totals') loadComparisons();
   render();
 }
 
@@ -529,7 +536,7 @@ function renderTotals(orders){
   });
   const rows = Object.entries(totals).sort((a,b)=> b[1]-a[1]);
 
-  const view = document.getElementById('totalsView');
+  const view = document.getElementById('totalsLiveStats');
   view.innerHTML = `
     <div class="summaryCard">
       <div><div class="label">Orders Today</div><div class="big">${orders.length}</div></div>
@@ -550,12 +557,7 @@ function renderTotals(orders){
         </div>
       `).join('')
     }
-    <div class="compareHeading">How today compares</div>
-    <div class="compareRow" id="compareRow">
-      <div class="compLoading">Loading…</div>
-    </div>
   `;
-  loadComparisons();
 }
 
 function shiftDate(date, { days = 0, months = 0, years = 0 }){
