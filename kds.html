@@ -130,6 +130,13 @@
     font-size:17px; letter-spacing:.03em; cursor:pointer;
   }
   .ticket .bumpBtn:active{opacity:.8;}
+  .ticket .voidBtn{
+    position:absolute; top:10px; right:10px; z-index:3;
+    width:26px; height:26px; border-radius:50%; border:1px solid rgba(44,29,25,0.2);
+    background:rgba(44,29,25,0.06); color:rgba(44,29,25,0.55);
+    font-size:13px; line-height:1; cursor:pointer;
+  }
+  .ticket .voidBtn:active{background:rgba(193,68,46,0.2); color:var(--jam);}
   .ticket .watchLabel{
     margin-top:14px; width:100%; padding:14px; border-radius:6px;
     background:rgba(44,29,25,0.06); color:var(--ink); font-family:'Nunito',sans-serif; font-weight:700;
@@ -185,6 +192,9 @@
   <label>Power Automate — Bump Order Flow URL</label>
   <input id="cfgBumpUrl" placeholder="https://prod-xx...invoke?...">
 
+  <label>Power Automate — Void Order Flow URL</label>
+  <input id="cfgVoidUrl" placeholder="https://prod-xx...invoke?...">
+
   <label>Truck</label>
   <select id="cfgTruck">
     <option value="all">All</option>
@@ -226,7 +236,8 @@ let MENU_NAMES = {};
 const DEFAULT_CONFIG = {
   supaUrl: 'https://yybeoshbfutlaxcknbcw.supabase.co',
   supaKey: 'sb_publishable_w0fyA7GpxuV_DiIBNZ5Lxw_RPHBSMKW',
-  bumpUrl: 'https://default43cd3e87970a40f698fb4f545be488.48.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/10/workflows/cc5eb04f80f545f986ae0286cfa82e13/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ta8MbzOIZF9EtTb4SdUMtdpqraXpcjuYuwzz3MG6Iwo'   // fill in your Bump Order flow URL below, then it'll default for every device
+  bumpUrl: 'https://default43cd3e87970a40f698fb4f545be488.48.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/10/workflows/cc5eb04f80f545f986ae0286cfa82e13/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ta8MbzOIZF9EtTb4SdUMtdpqraXpcjuYuwzz3MG6Iwo',  // fill in your Bump Order flow URL below, then it'll default for every device
+  voidUrl: 'https://default43cd3e87970a40f698fb4f545be488.48.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/08/workflows/fccb6fb3b0fe4bd19ce79824455336bc/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=Y9DDan14Fdv3X-aB3m995yx3qnDlft3scNM_-NgOYq8'   // fill in your Void Order flow URL below, then it'll default for every device
 };
 
 let config = { ...DEFAULT_CONFIG, truck:'all' };
@@ -311,6 +322,7 @@ function saveConfig(){
   config.supaUrl = document.getElementById('cfgSupaUrl').value.trim().replace(/\/$/,'');
   config.supaKey = document.getElementById('cfgSupaKey').value.trim();
   config.bumpUrl = document.getElementById('cfgBumpUrl').value.trim();
+  config.voidUrl = document.getElementById('cfgVoidUrl').value.trim();
   config.truck   = document.getElementById('cfgTruck').value;
   try{ localStorage.setItem('lgcd-kds-config', JSON.stringify(config)); } catch(e){}
   const note = document.getElementById('savedNote');
@@ -339,6 +351,7 @@ function loadConfig(){
   document.getElementById('cfgSupaUrl').value = config.supaUrl || '';
   document.getElementById('cfgSupaKey').value = config.supaKey || '';
   document.getElementById('cfgBumpUrl').value = config.bumpUrl || '';
+  document.getElementById('cfgVoidUrl').value = config.voidUrl || '';
   document.getElementById('cfgTruck').value = config.truck || 'all';
 
   if(urlTruck === 'van' || urlTruck === 'trailer'){
@@ -465,6 +478,7 @@ function render(){
     return `
       <div class="ticket ${ageClass}">
         <div class="jagged"></div>
+        <button class="voidBtn" onclick="voidOrder('${o.id}', this)" title="Void this order">✕</button>
         ${isOpen && isCash ? `<div class="cashFlag">💵 CASH DUE<br>$${Number(o.total_amount).toFixed(2)}</div>` : ''}
         <div class="ttop">
           <div class="tname">${escapeHtml(o.customer_name || 'Guest')}</div>
@@ -540,6 +554,27 @@ async function bumpOrder(orderId, btnEl){
   } catch(e){
     btnEl.disabled = false;
     btnEl.textContent = 'Bump — Ready (retry)';
+  }
+}
+
+async function voidOrder(orderId, btnEl){
+  if(!config.voidUrl){ alert('Set the Void Order Flow URL in setup first.'); return; }
+  const ok = confirm('Void this order? This permanently removes it — use only for test transactions or genuine mistakes. This cannot be undone.');
+  if(!ok) return;
+  btnEl.disabled = true;
+  btnEl.textContent = '…';
+  try{
+    const res = await fetch(config.voidUrl, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ order_id: orderId })
+    });
+    if(!res.ok) throw new Error();
+    await fetchOrders();
+  } catch(e){
+    btnEl.disabled = false;
+    btnEl.textContent = '✕';
+    alert('Could not void this order — check the flow URL and try again.');
   }
 }
 
