@@ -177,13 +177,13 @@
   <p style="font-size:12px; opacity:.6; margin:0;">Saved to this device's browser only.</p>
 
   <label>Supabase Project URL</label>
-  <input id="cfgSupaUrl" placeholder="https://yybeoshbfutlaxcknbcw.supabase.co">
+  <input id="cfgSupaUrl" placeholder="https://xxxxx.supabase.co">
 
   <label>Supabase Publishable Key</label>
-  <input id="cfgSupaKey" placeholder="sb_publishable_w0fyA7GpxuV_DiIBNZ5Lxw_RPHBSMKW">
+  <input id="cfgSupaKey" placeholder="sb_publishable_...">
 
   <label>Power Automate — Bump Order Flow URL</label>
-  <input id="cfgBumpUrl" placeholder="https://default43cd3e87970a40f698fb4f545be488.48.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/10/workflows/cc5eb04f80f545f986ae0286cfa82e13/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ta8MbzOIZF9EtTb4SdUMtdpqraXpcjuYuwzz3MG6Iwo">
+  <input id="cfgBumpUrl" placeholder="https://prod-xx...invoke?...">
 
   <label>Truck</label>
   <select id="cfgTruck">
@@ -217,7 +217,19 @@
 <script>
 let MENU_NAMES = {};
 
-let config = { supaUrl:'', supaKey:'', bumpUrl:'', truck:'all' };
+// ============================================================
+// DEFAULT CONFIG — pre-fills the setup panel on a fresh device.
+// The gear icon still works normally and can override any of these
+// on-device at any time; this just saves retyping the values that
+// never change between devices.
+// ============================================================
+const DEFAULT_CONFIG = {
+  supaUrl: 'https://yybeoshbfutlaxcknbcw.supabase.co',
+  supaKey: 'sb_publishable_w0fyA7GpxuV_DiIBNZ5Lxw_RPHBSMKW',
+  bumpUrl: 'https://default43cd3e87970a40f698fb4f545be488.48.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/10/workflows/cc5eb04f80f545f986ae0286cfa82e13/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ta8MbzOIZF9EtTb4SdUMtdpqraXpcjuYuwzz3MG6Iwo'   // fill in your Bump Order flow URL below, then it'll default for every device
+};
+
+let config = { ...DEFAULT_CONFIG, truck:'all' };
 let activeTab = 'open';
 let allOrders = [];
 let pollTimer = null;
