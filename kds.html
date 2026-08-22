@@ -95,7 +95,7 @@
     flex:0 0 270px; background:var(--ticket-paper); color:var(--ink);
     border-radius:2px; padding:18px 16px 16px; position:relative;
     box-shadow:0 10px 18px var(--paper-shadow);
-    font-family:'Special Elite',monospace;
+    font-family:'Nunito',sans-serif;
     transition:background-color 0.4s ease;
   }
   .ticket.ticket-yellow{ --ticket-paper: #F3DFA0; }
@@ -117,13 +117,13 @@
     background-color:var(--dough);
   }
   .ticket .ttop{display:flex; justify-content:space-between; align-items:baseline; margin-top:6px;}
-  .ticket .tname{font-size:22px; font-weight:700;}
+  .ticket .tname{font-size:22px; font-weight:800;}
   .ticket .ttruck{font-size:13px; text-transform:uppercase; letter-spacing:.06em; opacity:.6;}
   .ticket .telapsed{font-size:14px; margin:4px 0 12px; opacity:.65;}
   .ticket .telapsed.warn{color:var(--jam); font-weight:700;}
   .ticket hr{border:none; border-top:1px dashed rgba(44,29,25,0.3); margin:8px 0;}
-  .ticket .litem{display:flex; justify-content:space-between; font-size:18px; padding:4px 0;}
-  .ticket .litem .q{font-weight:700; margin-right:6px;}
+  .ticket .litem{display:flex; justify-content:space-between; font-size:22px; font-weight:800; padding:4px 0;}
+  .ticket .litem .q{font-weight:800; margin-right:6px;}
   .ticket .bumpBtn{
     margin-top:14px; width:100%; padding:14px; border:none; border-radius:6px;
     background:var(--ok); color:#fff; font-family:'Nunito',sans-serif; font-weight:800;
@@ -173,6 +173,20 @@
   }
   #totalsView .summaryCard .big{font-family:'Fredoka',sans-serif; font-size:26px; color:var(--butter);}
   #totalsView .summaryCard .label{font-size:11px; opacity:.6; text-transform:uppercase; letter-spacing:.06em;}
+  #totalsView .compareHeading{
+    font-family:'Fredoka',sans-serif; font-size:16px; margin:26px 0 12px; opacity:.85;
+  }
+  #totalsView .compareRow{display:flex; gap:12px;}
+  #totalsView .compCard{
+    flex:1; background:rgba(247,241,227,0.06); border:1px solid var(--line); border-radius:12px;
+    padding:12px 10px; text-align:center;
+  }
+  #totalsView .compTitle{font-size:12px; font-weight:800; opacity:.75;}
+  #totalsView .compDate{font-size:11px; opacity:.5; margin-bottom:8px;}
+  #totalsView .compOrders{font-size:12px; opacity:.7;}
+  #totalsView .compRevenue{font-family:'Fredoka',sans-serif; font-size:19px; color:var(--butter); margin-top:2px;}
+  #totalsView .compNoData{font-size:12px; opacity:.4; padding:6px 0;}
+  #totalsView .compLoading{font-size:13px; opacity:.5; padding:10px; width:100%; text-align:center;}
 </style>
 </head>
 <body>
@@ -236,15 +250,15 @@ let MENU_NAMES = {};
 const DEFAULT_CONFIG = {
   supaUrl: 'https://yybeoshbfutlaxcknbcw.supabase.co',
   supaKey: 'sb_publishable_w0fyA7GpxuV_DiIBNZ5Lxw_RPHBSMKW',
-  bumpUrl: 'https://default43cd3e87970a40f698fb4f545be488.48.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/10/workflows/cc5eb04f80f545f986ae0286cfa82e13/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ta8MbzOIZF9EtTb4SdUMtdpqraXpcjuYuwzz3MG6Iwo',  // fill in your Bump Order flow URL below, then it'll default for every device
-  voidUrl: 'https://default43cd3e87970a40f698fb4f545be488.48.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/08/workflows/fccb6fb3b0fe4bd19ce79824455336bc/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=Y9DDan14Fdv3X-aB3m995yx3qnDlft3scNM_-NgOYq8'   // fill in your Void Order flow URL below, then it'll default for every device
+  bumpUrl: '',  // fill in your Bump Order flow URL below, then it'll default for every device
+  voidUrl: ''   // fill in your Void Order flow URL below, then it'll default for every device
 };
 
 let config = { ...DEFAULT_CONFIG, truck:'all' };
 let activeTab = 'open';
 let allOrders = [];
 let pollTimer = null;
-const POLL_INTERVAL = 4000;
+const POLL_INTERVAL = 2000;
 
 /* ---------- sound ---------- */
 let soundEnabled = true;
@@ -536,7 +550,70 @@ function renderTotals(orders){
         </div>
       `).join('')
     }
+    <div class="compareHeading">How today compares</div>
+    <div class="compareRow" id="compareRow">
+      <div class="compLoading">Loading…</div>
+    </div>
   `;
+  loadComparisons();
+}
+
+function shiftDate(date, { days = 0, months = 0, years = 0 }){
+  const d = new Date(date);
+  if(years) d.setFullYear(d.getFullYear() + years);
+  if(months) d.setMonth(d.getMonth() + months);
+  if(days) d.setDate(d.getDate() + days);
+  return d;
+}
+
+function dayRangeISO(date){
+  const start = new Date(date);
+  start.setHours(0,0,0,0);
+  const end = new Date(start);
+  end.setDate(end.getDate() + 1);
+  return {
+    startISO: start.toISOString(),
+    endISO: end.toISOString(),
+    label: start.toLocaleDateString(undefined, { month:'short', day:'numeric', year:'numeric' })
+  };
+}
+
+async function fetchDayTotal(date){
+  const { startISO, endISO, label } = dayRangeISO(date);
+  try{
+    const url = `${config.supaUrl}/rest/v1/orders?created_at=gte.${startISO}&created_at=lt.${endISO}&status=in.(paid,done)&select=total_amount`;
+    const res = await fetch(url, { headers:{ 'apikey': config.supaKey, 'Authorization': 'Bearer '+config.supaKey } });
+    if(!res.ok) return { label, orders:0, revenue:0 };
+    const rows = await res.json();
+    const revenue = rows.reduce((sum,o) => sum + Number(o.total_amount || 0), 0);
+    return { label, orders: rows.length, revenue };
+  } catch(e){
+    return { label, orders:0, revenue:0 };
+  }
+}
+
+async function loadComparisons(){
+  const now = new Date();
+  const [lastWeek, lastMonth, lastYear] = await Promise.all([
+    fetchDayTotal(shiftDate(now, { days: -7 })),
+    fetchDayTotal(shiftDate(now, { months: -1 })),
+    fetchDayTotal(shiftDate(now, { years: -1 })),
+  ]);
+
+  const container = document.getElementById('compareRow');
+  if(!container) return; // user navigated away before this resolved
+
+  const card = (title, data) => `
+    <div class="compCard">
+      <div class="compTitle">${title}</div>
+      <div class="compDate">${data.label}</div>
+      ${data.orders > 0
+        ? `<div class="compOrders">${data.orders} orders</div><div class="compRevenue">$${data.revenue.toFixed(2)}</div>`
+        : `<div class="compNoData">No data</div>`
+      }
+    </div>
+  `;
+  container.innerHTML = card('Last Week', lastWeek) + card('Last Month', lastMonth) + card('Last Year', lastYear);
 }
 
 async function bumpOrder(orderId, btnEl){
@@ -550,6 +627,10 @@ async function bumpOrder(orderId, btnEl){
       body: JSON.stringify({ order_id: orderId })
     });
     if(!res.ok) throw new Error();
+    // Brief pause before re-fetching — avoids a race where the refresh reads the
+    // database a split second before the write has fully landed, which used to
+    // flash the ticket back to "Bump — Ready" right before it correctly vanished.
+    await new Promise(r => setTimeout(r, 500));
     await fetchOrders();
   } catch(e){
     btnEl.disabled = false;
