@@ -130,6 +130,11 @@
     font-size:17px; letter-spacing:.03em; cursor:pointer;
   }
   .ticket .bumpBtn:active{opacity:.8;}
+  .ticket .watchLabel{
+    margin-top:14px; width:100%; padding:14px; border-radius:6px;
+    background:rgba(44,29,25,0.06); color:var(--ink); font-family:'Nunito',sans-serif; font-weight:700;
+    font-size:16px; letter-spacing:.03em; text-align:center; opacity:.7;
+  }
   .ticket .doneStamp{
     position:absolute; top:34%; left:50%; transform:translate(-50%,-50%) rotate(-14deg);
     border:3px solid var(--ok); color:var(--ok); font-family:'Fredoka',sans-serif;
@@ -315,6 +320,10 @@ function loadConfig(){
   const urlTruck = params.get('truck');
   if(urlTruck === 'van' || urlTruck === 'trailer') config.truck = urlTruck;
 
+  // ?view=display removes the Bump button — for a station that only needs to watch
+  // order flow (e.g. the make table), not mark things ready.
+  config.viewOnly = params.get('view') === 'display';
+
   document.getElementById('cfgSupaUrl').value = config.supaUrl || '';
   document.getElementById('cfgSupaKey').value = config.supaKey || '';
   document.getElementById('cfgBumpUrl').value = config.bumpUrl || '';
@@ -452,7 +461,11 @@ function render(){
         <div class="telapsed ${warnClass}">${isOpen ? elapsedLabel(o.created_at) : 'placed ' + elapsedLabel(o.created_at)}</div>
         <hr>
         ${renderItems(o.items)}
-        ${isOpen ? `<button class="bumpBtn" onclick="bumpOrder('${o.id}', this)">Bump — Ready</button>` : `
+        ${isOpen
+          ? (config.viewOnly
+              ? `<div class="watchLabel">👀 In Progress</div>`
+              : `<button class="bumpBtn" onclick="bumpOrder('${o.id}', this)">Bump — Ready</button>`)
+          : `
           <div class="doneStamp">DONE</div>
           <div class="doneTime">completed ${o.completed_at ? elapsedLabel(o.completed_at) : ''}</div>
         `}
