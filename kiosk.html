@@ -929,7 +929,7 @@ async function placeOrder(customerName, paymentMethod, tipAmount){
       headers:{'Content-Type':'application/json'},
       body: JSON.stringify({
         order_id: order.reference_id,
-        amount: Math.round(total*100),
+        amount: Math.round(orderTotal*100),
         tip_amount: Math.round(tip*100),
         device_id: config.deviceId
       })
