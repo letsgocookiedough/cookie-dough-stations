@@ -464,7 +464,20 @@ function saveConfig(){
 
 async function loadConfig(){
   const params = new URLSearchParams(window.location.search);
-  const deviceName = params.get('device');
+  let deviceName = params.get('device');
+
+  // Remember this device's identity locally. If a future launch (home screen
+  // icon, manifest quirk, whatever the platform does) loses the ?device=
+  // parameter, this lets the page recover its own identity instead of coming
+  // up blank — regardless of how Safari or Chrome handle the manifest.
+  try{
+    if(deviceName){
+      localStorage.setItem('lgcd-kiosk-device', deviceName);
+    } else {
+      deviceName = localStorage.getItem('lgcd-kiosk-device');
+      if(deviceName) console.warn(`No ?device= in the URL this time — recovered "${deviceName}" from this browser's memory instead.`);
+    }
+  } catch(e){ /* storage unavailable — falls through to the warning below */ }
 
   if(deviceName){
     try{
@@ -478,7 +491,7 @@ async function loadConfig(){
       console.error(`Could not load configs/${deviceName}.json — confirm the file exists in the configs/ folder and the name matches exactly.`, e);
     }
   } else {
-    console.warn('No ?device=NAME in the URL — bookmark this page as kiosk.html?device=KioskT1 (or whichever device this is).');
+    console.warn('No ?device=NAME in the URL, and nothing remembered from a previous load — bookmark this page as kiosk.html?device=KioskT1 (or whichever device this is) at least once.');
   }
 
   document.getElementById('truckTag').textContent = (config.truck || '?').toUpperCase();
