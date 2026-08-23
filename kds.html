@@ -154,6 +154,12 @@
     box-shadow:0 2px 6px rgba(193,68,46,0.4);
   }
   .ticket .doneTime{font-size:13px; opacity:.55; margin-top:10px;}
+  .ticket .reopenBtn{
+    margin-top:12px; width:100%; padding:10px; border:1px solid var(--line); border-radius:6px;
+    background:transparent; color:var(--ink); opacity:.65; font-family:'Nunito',sans-serif; font-weight:700;
+    font-size:14px; cursor:pointer;
+  }
+  .ticket .reopenBtn:active{opacity:1; background:rgba(44,29,25,0.06);}
 
   #emptyState{
     text-align:center; opacity:.5; padding:40px 20px; font-size:14px;
@@ -209,6 +215,9 @@
   <label>Power Automate — Void Order Flow URL</label>
   <input id="cfgVoidUrl" placeholder="https://prod-xx...invoke?...">
 
+  <label>Power Automate — Reopen Order Flow URL</label>
+  <input id="cfgReopenUrl" placeholder="https://prod-xx...invoke?...">
+
   <label>Truck</label>
   <select id="cfgTruck">
     <option value="all">All</option>
@@ -256,8 +265,9 @@ let MENU_NAMES = {};
 const DEFAULT_CONFIG = {
   supaUrl: 'https://yybeoshbfutlaxcknbcw.supabase.co',
   supaKey: 'sb_publishable_w0fyA7GpxuV_DiIBNZ5Lxw_RPHBSMKW',
-  bumpUrl: 'https://default43cd3e87970a40f698fb4f545be488.48.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/10/workflows/cc5eb04f80f545f986ae0286cfa82e13/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ta8MbzOIZF9EtTb4SdUMtdpqraXpcjuYuwzz3MG6Iwo',  // fill in your Bump Order flow URL below, then it'll default for every device
-  voidUrl: 'https://default43cd3e87970a40f698fb4f545be488.48.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/08/workflows/fccb6fb3b0fe4bd19ce79824455336bc/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=Y9DDan14Fdv3X-aB3m995yx3qnDlft3scNM_-NgOYq8'   // fill in your Void Order flow URL below, then it'll default for every device
+  bumpUrl: 'https://default43cd3e87970a40f698fb4f545be488.48.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/10/workflows/cc5eb04f80f545f986ae0286cfa82e13/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ta8MbzOIZF9EtTb4SdUMtdpqraXpcjuYuwzz3MG6Iwo',
+  voidUrl: 'https://default43cd3e87970a40f698fb4f545be488.48.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/08/workflows/fccb6fb3b0fe4bd19ce79824455336bc/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=Y9DDan14Fdv3X-aB3m995yx3qnDlft3scNM_-NgOYq8',
+  reopenUrl: 'https://default43cd3e87970a40f698fb4f545be488.48.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/05/workflows/69b29f4eecc04729a8b1a9891a290d3d/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=CWCaHQYhpx_Ypwwkey_H9mX7_ufHp_IGIXlxKua9WPM'
 };
 
 let config = { ...DEFAULT_CONFIG, truck:'all' };
@@ -353,6 +363,7 @@ function saveConfig(){
   config.supaKey = document.getElementById('cfgSupaKey').value.trim();
   config.bumpUrl = document.getElementById('cfgBumpUrl').value.trim();
   config.voidUrl = document.getElementById('cfgVoidUrl').value.trim();
+  config.reopenUrl = document.getElementById('cfgReopenUrl').value.trim();
   config.truck   = document.getElementById('cfgTruck').value;
   try{ localStorage.setItem('lgcd-kds-config', JSON.stringify(config)); } catch(e){}
   const note = document.getElementById('savedNote');
@@ -382,6 +393,7 @@ function loadConfig(){
   document.getElementById('cfgSupaKey').value = config.supaKey || '';
   document.getElementById('cfgBumpUrl').value = config.bumpUrl || '';
   document.getElementById('cfgVoidUrl').value = config.voidUrl || '';
+  document.getElementById('cfgReopenUrl').value = config.reopenUrl || '';
   document.getElementById('cfgTruck').value = config.truck || 'all';
 
   if(urlTruck === 'van' || urlTruck === 'trailer'){
@@ -525,6 +537,7 @@ function render(){
           : `
           <div class="doneStamp">DONE</div>
           <div class="doneTime">completed ${o.completed_at ? elapsedLabel(o.completed_at) : ''}</div>
+          ${config.viewOnly ? '' : `<button class="reopenBtn" onclick="reopenOrder('${o.id}', this)">↩ Move to Open</button>`}
         `}
       </div>
     `;
@@ -674,6 +687,29 @@ async function voidOrder(orderId, btnEl){
     btnEl.disabled = false;
     btnEl.textContent = '✕';
     alert('Could not void this order — check the flow URL and try again.');
+  }
+}
+
+async function reopenOrder(orderId, btnEl){
+  if(!config.reopenUrl){ alert('Set the Reopen Order Flow URL in setup first.'); return; }
+  btnEl.disabled = true;
+  btnEl.textContent = 'Reopening...';
+  try{
+    const res = await fetch(config.reopenUrl, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ order_id: orderId })
+    });
+    if(!res.ok) throw new Error();
+    const order = allOrders.find(o => o.id === orderId);
+    if(order){
+      order.status = 'paid';
+      order.completed_at = null;
+    }
+    render();
+  } catch(e){
+    btnEl.disabled = false;
+    btnEl.textContent = '↩ Move to Open (retry)';
   }
 }
 
