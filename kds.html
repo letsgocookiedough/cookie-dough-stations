@@ -641,17 +641,37 @@ async function loadComparisons(){
   container.innerHTML = card('Last Week', lastWeek) + card('Last Month', lastMonth) + card('Last Year', lastYear);
 }
 
+// Fires a flow call, but doesn't let a slow response stall the UI. If it hasn't
+// heard back within timeoutMs, moves on optimistically and just confirms quietly
+// in the background — a slow Power Automate run shouldn't stall the kitchen.
+async function fireWithTimeout(url, orderId, timeoutMs = 3000){
+  const request = fetch(url, {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ order_id: orderId })
+  }).then(res => res.ok).catch(() => false);
+
+  const result = await Promise.race([
+    request.then(ok => ({ timedOut:false, ok })),
+    new Promise(resolve => setTimeout(() => resolve({ timedOut:true }), timeoutMs))
+  ]);
+
+  if(result.timedOut){
+    request.then(ok => {
+      if(!ok) console.warn(`A request for order ${orderId} timed out and then failed — double-check this ticket.`);
+    });
+    return { ok:true, timedOut:true };
+  }
+  return result;
+}
+
 async function bumpOrder(orderId, btnEl){
   if(!config.bumpUrl){ alert('Set the Bump Order Flow URL in setup first.'); return; }
   btnEl.disabled = true;
   btnEl.textContent = 'Bumping...';
   try{
-    const res = await fetch(config.bumpUrl, {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ order_id: orderId })
-    });
-    if(!res.ok) throw new Error();
+    const result = await fireWithTimeout(config.bumpUrl, orderId);
+    if(!result.ok) throw new Error();
     // Trust our own successful bump immediately instead of re-fetching to confirm
     // it — removes the round-trip delay entirely. The next regular poll (a couple
     // seconds away either way) reconciles with the server in the background.
@@ -674,12 +694,8 @@ async function voidOrder(orderId, btnEl){
   btnEl.disabled = true;
   btnEl.textContent = '…';
   try{
-    const res = await fetch(config.voidUrl, {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ order_id: orderId })
-    });
-    if(!res.ok) throw new Error();
+    const result = await fireWithTimeout(config.voidUrl, orderId);
+    if(!result.ok) throw new Error();
     // Remove locally right away rather than waiting on a re-fetch to confirm it.
     allOrders = allOrders.filter(o => o.id !== orderId);
     render();
@@ -695,12 +711,8 @@ async function reopenOrder(orderId, btnEl){
   btnEl.disabled = true;
   btnEl.textContent = 'Reopening...';
   try{
-    const res = await fetch(config.reopenUrl, {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ order_id: orderId })
-    });
-    if(!res.ok) throw new Error();
+    const result = await fireWithTimeout(config.reopenUrl, orderId);
+    if(!result.ok) throw new Error();
     const order = allOrders.find(o => o.id === orderId);
     if(order){
       order.status = 'paid';
