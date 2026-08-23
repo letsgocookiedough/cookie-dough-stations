@@ -639,11 +639,15 @@ async function bumpOrder(orderId, btnEl){
       body: JSON.stringify({ order_id: orderId })
     });
     if(!res.ok) throw new Error();
-    // Brief pause before re-fetching — avoids a race where the refresh reads the
-    // database a split second before the write has fully landed, which used to
-    // flash the ticket back to "Bump — Ready" right before it correctly vanished.
-    await new Promise(r => setTimeout(r, 500));
-    await fetchOrders();
+    // Trust our own successful bump immediately instead of re-fetching to confirm
+    // it — removes the round-trip delay entirely. The next regular poll (a couple
+    // seconds away either way) reconciles with the server in the background.
+    const order = allOrders.find(o => o.id === orderId);
+    if(order){
+      order.status = 'done';
+      order.completed_at = new Date().toISOString();
+    }
+    render();
   } catch(e){
     btnEl.disabled = false;
     btnEl.textContent = 'Bump — Ready (retry)';
@@ -663,7 +667,9 @@ async function voidOrder(orderId, btnEl){
       body: JSON.stringify({ order_id: orderId })
     });
     if(!res.ok) throw new Error();
-    await fetchOrders();
+    // Remove locally right away rather than waiting on a re-fetch to confirm it.
+    allOrders = allOrders.filter(o => o.id !== orderId);
+    render();
   } catch(e){
     btnEl.disabled = false;
     btnEl.textContent = '✕';
