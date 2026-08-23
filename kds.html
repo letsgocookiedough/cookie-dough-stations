@@ -289,24 +289,34 @@ function playBell(){
     if(ctx.state === 'suspended') ctx.resume();
     const now = ctx.currentTime;
 
-    // Mid fundamental with mild inharmonic partials — warmer than a bright bell,
-    // brighter and shorter than a deep gong.
-    const fundamental = 300;
+    // Limiter lets us push volume up noticeably without the harsh clipping/
+    // distortion that would come from just raising gain values directly.
+    const limiter = ctx.createDynamicsCompressor();
+    limiter.threshold.value = -14;
+    limiter.knee.value = 6;
+    limiter.ratio.value = 10;
+    limiter.attack.value = 0.002;
+    limiter.release.value = 0.15;
+    limiter.connect(ctx.destination);
+
+    // Raised fundamental — higher pitch cuts through better on small/external
+    // tablet speakers than the previous, warmer tone did.
+    const fundamental = 380;
     const partials = [1, 2, 2.76];
-    const levels =   [0.40, 0.18, 0.10];
+    const levels =   [0.62, 0.30, 0.18];
 
     partials.forEach((ratio, i) => {
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
       const filter = ctx.createBiquadFilter();
       filter.type = 'lowpass';
-      filter.frequency.value = 2600;
+      filter.frequency.value = 3000;
       osc.type = 'sine';
       osc.frequency.value = fundamental * ratio;
       gain.gain.setValueAtTime(0, now);
       gain.gain.linearRampToValueAtTime(levels[i], now + 0.012);
       gain.gain.exponentialRampToValueAtTime(0.001, now + 0.9);
-      osc.connect(filter).connect(gain).connect(ctx.destination);
+      osc.connect(filter).connect(gain).connect(limiter);
       osc.start(now);
       osc.stop(now + 0.95);
     });
@@ -320,11 +330,11 @@ function playBell(){
     noise.buffer = noiseBuffer;
     const noiseFilter = ctx.createBiquadFilter();
     noiseFilter.type = 'lowpass';
-    noiseFilter.frequency.value = 1400;
+    noiseFilter.frequency.value = 1600;
     const noiseGain = ctx.createGain();
-    noiseGain.gain.setValueAtTime(0.2, now);
+    noiseGain.gain.setValueAtTime(0.3, now);
     noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 0.04);
-    noise.connect(noiseFilter).connect(noiseGain).connect(ctx.destination);
+    noise.connect(noiseFilter).connect(noiseGain).connect(limiter);
     noise.start(now);
   } catch(e){ /* audio unavailable on this device/browser */ }
 }
