@@ -153,6 +153,11 @@
     border-radius:8px; margin:8px 0 14px; letter-spacing:.02em;
     box-shadow:0 2px 6px rgba(193,68,46,0.4);
   }
+  .ticket .resyncBadge{
+    background:var(--butter); color:var(--ink); font-family:'Nunito',sans-serif; font-weight:800;
+    font-size:14px; line-height:1.3; text-align:center; padding:8px 8px;
+    border-radius:8px; margin:4px 0 12px; letter-spacing:.01em;
+  }
   .ticket .doneTime{font-size:13px; opacity:.55; margin-top:10px;}
   .ticket .reopenBtn{
     margin-top:12px; width:100%; padding:10px; border:1px solid var(--line); border-radius:6px;
@@ -273,6 +278,7 @@ const DEFAULT_CONFIG = {
 let config = { ...DEFAULT_CONFIG, truck:'all' };
 let activeTab = 'open';
 let allOrders = [];
+let pendingSync = {}; // orderId -> 'bump' | 'void' | 'reopen' — cleared once confirmed synced
 let pollTimer = null;
 const POLL_INTERVAL = 2000;
 
@@ -449,10 +455,27 @@ async function fetchOrders(){
     if(!res.ok) return;
     allOrders = await res.json();
 
+    // Reconcile anything we optimistically actioned. If the server now agrees,
+    // stop flagging it. If it doesn't (a bump/void/reopen that hasn't landed
+    // yet, or genuinely failed), it stays flagged so the ticket reads as
+    // "syncing" rather than looking like a brand new order.
+    const fetchedIds = new Set(allOrders.map(o => o.id));
+    Object.keys(pendingSync).forEach(id => {
+      const action = pendingSync[id];
+      const order = allOrders.find(o => o.id === id);
+      if(action === 'void' && !fetchedIds.has(id)){
+        delete pendingSync[id]; // confirmed gone
+      } else if(action === 'bump' && order && order.status === 'done'){
+        delete pendingSync[id]; // confirmed bumped
+      } else if(action === 'reopen' && order && order.status === 'paid'){
+        delete pendingSync[id]; // confirmed reopened
+      }
+    });
+
     const currentOpenIds = new Set(allOrders.filter(o => o.status === 'paid').map(o => o.id));
     if(knownOpenIds !== null){
       let hasNew = false;
-      currentOpenIds.forEach(id => { if(!knownOpenIds.has(id)) hasNew = true; });
+      currentOpenIds.forEach(id => { if(!knownOpenIds.has(id) && !pendingSync[id]) hasNew = true; });
       if(hasNew) playBell();
     }
     knownOpenIds = currentOpenIds;
@@ -522,6 +545,7 @@ function render(){
       <div class="ticket ${ageClass}">
         <div class="jagged"></div>
         <button class="voidBtn" onclick="voidOrder('${o.id}', this)" title="Void this order">✕</button>
+        ${pendingSync[o.id] ? `<div class="resyncBadge">↻ Syncing — already actioned, catching up</div>` : ''}
         ${isOpen && isCash ? `<div class="cashFlag">💵 CASH DUE<br>$${Number(o.total_amount).toFixed(2)}</div>` : ''}
         <div class="ttop">
           <div class="tname">${escapeHtml(o.customer_name || 'Guest')}</div>
@@ -644,85 +668,71 @@ async function loadComparisons(){
 // Fires a flow call, but doesn't let a slow response stall the UI. If it hasn't
 // heard back within timeoutMs, moves on optimistically and just confirms quietly
 // in the background — a slow Power Automate run shouldn't stall the kitchen.
-async function fireWithTimeout(url, orderId, timeoutMs = 3000){
-  const request = fetch(url, {
+// Fires an action in the background with a few retries, spaced out to give a
+// flaky connection a real chance to recover. Doesn't block or update the UI —
+// that already happened the instant the button was tapped. If every attempt
+// genuinely fails, the next regular poll (which always reflects the real
+// server state) will pull the ticket back to where it actually belongs —
+// so nothing is silently lost even in the worst case.
+function sendInBackground(url, orderId, label, attempt = 1){
+  const maxAttempts = 5;
+  fetch(url, {
     method:'POST',
     headers:{'Content-Type':'application/json'},
     body: JSON.stringify({ order_id: orderId })
-  }).then(res => res.ok).catch(() => false);
-
-  const result = await Promise.race([
-    request.then(ok => ({ timedOut:false, ok })),
-    new Promise(resolve => setTimeout(() => resolve({ timedOut:true }), timeoutMs))
-  ]);
-
-  if(result.timedOut){
-    request.then(ok => {
-      if(!ok) console.warn(`A request for order ${orderId} timed out and then failed — double-check this ticket.`);
-    });
-    return { ok:true, timedOut:true };
-  }
-  return result;
-}
-
-async function bumpOrder(orderId, btnEl){
-  if(!config.bumpUrl){ alert('Set the Bump Order Flow URL in setup first.'); return; }
-  btnEl.disabled = true;
-  btnEl.textContent = 'Bumping...';
-  try{
-    const result = await fireWithTimeout(config.bumpUrl, orderId);
-    if(!result.ok) throw new Error();
-    // Trust our own successful bump immediately instead of re-fetching to confirm
-    // it — removes the round-trip delay entirely. The next regular poll (a couple
-    // seconds away either way) reconciles with the server in the background.
-    const order = allOrders.find(o => o.id === orderId);
-    if(order){
-      order.status = 'done';
-      order.completed_at = new Date().toISOString();
+  }).then(res => {
+    if(!res.ok) throw new Error('HTTP ' + res.status);
+    // succeeded — nothing further to do
+  }).catch(() => {
+    if(attempt < maxAttempts){
+      setTimeout(() => sendInBackground(url, orderId, label, attempt + 1), attempt * 1500);
+    } else {
+      console.warn(`${label} for order ${orderId} failed after ${maxAttempts} attempts on a shaky connection — it'll reappear on the rail on the next refresh if it truly didn't go through.`);
     }
-    render();
-  } catch(e){
-    btnEl.disabled = false;
-    btnEl.textContent = 'Bump — Ready (retry)';
-  }
+  });
 }
 
-async function voidOrder(orderId, btnEl){
+function bumpOrder(orderId, btnEl){
+  if(!config.bumpUrl){ alert('Set the Bump Order Flow URL in setup first.'); return; }
+  if(btnEl) btnEl.disabled = true;
+
+  pendingSync[orderId] = 'bump';
+  const order = allOrders.find(o => o.id === orderId);
+  if(order){
+    order.status = 'done';
+    order.completed_at = new Date().toISOString();
+  }
+  render();
+
+  sendInBackground(config.bumpUrl, orderId, 'Bump');
+}
+
+function voidOrder(orderId, btnEl){
   if(!config.voidUrl){ alert('Set the Void Order Flow URL in setup first.'); return; }
   const ok = confirm('Void this order? This permanently removes it — use only for test transactions or genuine mistakes. This cannot be undone.');
   if(!ok) return;
-  btnEl.disabled = true;
-  btnEl.textContent = '…';
-  try{
-    const result = await fireWithTimeout(config.voidUrl, orderId);
-    if(!result.ok) throw new Error();
-    // Remove locally right away rather than waiting on a re-fetch to confirm it.
-    allOrders = allOrders.filter(o => o.id !== orderId);
-    render();
-  } catch(e){
-    btnEl.disabled = false;
-    btnEl.textContent = '✕';
-    alert('Could not void this order — check the flow URL and try again.');
-  }
+  if(btnEl) btnEl.disabled = true;
+
+  pendingSync[orderId] = 'void';
+  allOrders = allOrders.filter(o => o.id !== orderId);
+  render();
+
+  sendInBackground(config.voidUrl, orderId, 'Void');
 }
 
-async function reopenOrder(orderId, btnEl){
+function reopenOrder(orderId, btnEl){
   if(!config.reopenUrl){ alert('Set the Reopen Order Flow URL in setup first.'); return; }
-  btnEl.disabled = true;
-  btnEl.textContent = 'Reopening...';
-  try{
-    const result = await fireWithTimeout(config.reopenUrl, orderId);
-    if(!result.ok) throw new Error();
-    const order = allOrders.find(o => o.id === orderId);
-    if(order){
-      order.status = 'paid';
-      order.completed_at = null;
-    }
-    render();
-  } catch(e){
-    btnEl.disabled = false;
-    btnEl.textContent = '↩ Move to Open (retry)';
+  if(btnEl) btnEl.disabled = true;
+
+  pendingSync[orderId] = 'reopen';
+  const order = allOrders.find(o => o.id === orderId);
+  if(order){
+    order.status = 'paid';
+    order.completed_at = null;
   }
+  render();
+
+  sendInBackground(config.reopenUrl, orderId, 'Reopen');
 }
 
 loadConfig();
