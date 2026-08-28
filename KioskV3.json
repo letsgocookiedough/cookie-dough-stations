@@ -1,0 +1,7 @@
+{
+  "supaUrl": "https://yybeoshbfutlaxcknbcw.supabase.co",
+  "supaKey": "sb_publishable_w0fyA7GpxuV_DiIBNZ5Lxw_RPHBSMKW",
+  "flowUrl": "https://default43cd3e87970a40f698fb4f545be488.48.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/01/workflows/cf57289b5a904dfa8eed32636ac5852e/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=NLJKoOhk66mCMPs5uYRQtjV3cyHoMwffxJMvG_vAcTk",
+  "truck": "van",
+  "deviceId": "614VS149C4001951"
+}
