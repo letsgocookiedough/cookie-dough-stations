@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Item Availability — Let's Go Cookie Dough</title>
+<style>
+  :root{
+    --espresso:#2E2119;
+    --dough:#4A362A;
+    --butter:#E8A930;
+    --butter-dim:#C9922A;
+    --paper:#FAF3E6;
+    --card:#FFFFFF;
+    --line:#E4D7C4;
+    --off:#C7BEB2;
+    --off-dark:#9A8F80;
+    --good:#5C7A4A;
+    --danger:#A6472F;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--paper);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    color:var(--espresso);
+    -webkit-tap-highlight-color:transparent;
+  }
+  header{
+    background:var(--espresso);
+    color:var(--paper);
+    padding:18px 20px 14px;
+    position:sticky;
+    top:0;
+    z-index:10;
+  }
+  header h1{
+    margin:0 0 2px;
+    font-size:1.15rem;
+    font-weight:700;
+    letter-spacing:0.2px;
+  }
+  header p{
+    margin:0;
+    font-size:0.82rem;
+    color:#C9BBA6;
+  }
+  .tabs{
+    display:flex;
+    gap:8px;
+    padding:14px 20px 0;
+    max-width:640px;
+    margin:0 auto;
+  }
+  .tab{
+    flex:1;
+    text-align:center;
+    padding:10px 0;
+    border-radius:10px 10px 0 0;
+    background:var(--card);
+    color:var(--dough);
+    font-weight:600;
+    font-size:0.95rem;
+    border:1px solid var(--line);
+    border-bottom:none;
+    cursor:pointer;
+  }
+  .tab.active{
+    background:var(--butter);
+    color:var(--espresso);
+    border-color:var(--butter);
+  }
+  main{
+    max-width:640px;
+    margin:0 auto;
+    padding:0 20px 32px;
+  }
+  .list{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:0 0 12px 12px;
+    overflow:hidden;
+  }
+  .item{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:16px 18px;
+    border-bottom:1px solid var(--line);
+    gap:14px;
+  }
+  .item:last-child{border-bottom:none;}
+  .item.unavailable{background:#FAF7F2;}
+  .item-info{min-width:0;}
+  .item-name{
+    font-weight:600;
+    font-size:1rem;
+    margin:0 0 3px;
+  }
+  .item.unavailable .item-name{color:var(--off-dark);}
+  .item-meta{
+    margin:0;
+    font-size:0.82rem;
+    color:var(--dough);
+  }
+  .status-word{
+    font-size:0.78rem;
+    font-weight:600;
+    min-width:64px;
+    text-align:right;
+  }
+  .status-word.on{color:var(--good);}
+  .status-word.off{color:var(--danger);}
+  .switch-row{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    flex-shrink:0;
+  }
+  .switch{
+    position:relative;
+    width:52px;
+    height:30px;
+    border-radius:999px;
+    background:var(--off);
+    border:none;
+    cursor:pointer;
+    padding:0;
+    transition:background 0.15s ease;
+    flex-shrink:0;
+  }
+  .switch.on{background:var(--good);}
+  .switch::after{
+    content:"";
+    position:absolute;
+    top:3px;
+    left:3px;
+    width:24px;
+    height:24px;
+    border-radius:50%;
+    background:#fff;
+    box-shadow:0 1px 3px rgba(0,0,0,0.3);
+    transition:transform 0.15s ease;
+  }
+  .switch.on::after{transform:translateX(22px);}
+  .switch.pending{opacity:0.5;pointer-events:none;}
+  .banner{
+    margin:14px 0 0;
+    padding:10px 14px;
+    border-radius:8px;
+    font-size:0.85rem;
+    display:none;
+  }
+  .banner.show{display:block;}
+  .banner.error{background:#F5DDD5;color:var(--danger);}
+  .banner.ok{background:#E4EEDD;color:var(--good);}
+  .empty{
+    padding:28px 18px;
+    text-align:center;
+    color:var(--dough);
+    font-size:0.9rem;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Item Availability</h1>
+  <p>Tap to mark items sold out or back in stock</p>
+</header>
+
+<main>
+  <div class="tabs">
+    <div class="tab active" data-truck="van">Van</div>
+    <div class="tab" data-truck="trailer">Trailer</div>
+  </div>
+  <div class="list" id="list">
+    <div class="empty">Loading items…</div>
+  </div>
+  <div class="banner" id="banner"></div>
+</main>
+
+<script>
+// ---- Config: fill these in ----
+const SUPABASE_URL = "https://yybeoshbfutlaxcknbcw.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_w0fyA7GpxuV_DiIBNZ5Lxw_RPHBSMKW";
+const POWER_AUTOMATE_URL = "https://default43cd3e87970a40f698fb4f545be488.48.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/04/workflows/e7b8326d0b5641b7bd1d315e136af7cf/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=olL4sH2gqjkIyfaX0RvKrtJZPSAYXJagWrvU9smVJgQ";
+// --------------------------------
+
+let currentTruck = "van";
+let items = [];
+
+const listEl = document.getElementById("list");
+const bannerEl = document.getElementById("banner");
+const tabs = document.querySelectorAll(".tab");
+
+tabs.forEach(tab => {
+  tab.addEventListener("click", () => {
+    tabs.forEach(t => t.classList.remove("active"));
+    tab.classList.add("active");
+    currentTruck = tab.dataset.truck;
+    render();
+  });
+});
+
+async function loadItems() {
+  try {
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/menu_items?select=id,name,sort_order,available_van,available_trailer&order=sort_order.asc`,
+      {
+        headers: {
+          "apikey": SUPABASE_ANON_KEY,
+          "Authorization": `Bearer ${SUPABASE_ANON_KEY}`
+        }
+      }
+    );
+    if (!res.ok) throw new Error(`Supabase returned ${res.status}`);
+    items = await res.json();
+    render();
+  } catch (err) {
+    listEl.innerHTML = `<div class="empty">Couldn't load items. Check the Supabase config in this page.</div>`;
+    showBanner("error", err.message);
+  }
+}
+
+function render() {
+  if (!items.length) {
+    listEl.innerHTML = `<div class="empty">No items found.</div>`;
+    return;
+  }
+  const availKey = currentTruck === "van" ? "available_van" : "available_trailer";
+  listEl.innerHTML = "";
+  items.forEach(item => {
+    const isOn = !!item[availKey];
+    const row = document.createElement("div");
+    row.className = "item" + (isOn ? "" : " unavailable");
+    row.innerHTML = `
+      <div class="item-info">
+        <p class="item-name">${item.name}</p>
+      </div>
+      <div class="switch-row">
+        <span class="status-word ${isOn ? 'on' : 'off'}">${isOn ? 'Available' : 'Sold out'}</span>
+        <button class="switch ${isOn ? 'on' : ''}" data-id="${item.id}" aria-label="Toggle ${item.name}"></button>
+      </div>
+    `;
+    listEl.appendChild(row);
+  });
+
+  document.querySelectorAll(".switch").forEach(btn => {
+    btn.addEventListener("click", () => toggleItem(btn));
+  });
+}
+
+async function toggleItem(btn) {
+  const id = btn.dataset.id;
+  const item = items.find(i => i.id === id);
+  const availKey = currentTruck === "van" ? "available_van" : "available_trailer";
+  const newValue = !item[availKey];
+
+  btn.classList.add("pending");
+
+  try {
+    const res = await fetch(POWER_AUTOMATE_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        id: id,
+        truck: currentTruck,
+        available: newValue
+      })
+    });
+    if (!res.ok) throw new Error(`Flow returned ${res.status}`);
+
+    item[availKey] = newValue;
+    render();
+    showBanner("ok", `${item.name} marked ${newValue ? "available" : "sold out"} on ${currentTruck}.`);
+  } catch (err) {
+    showBanner("error", `Couldn't update ${item.name}: ${err.message}`);
+  } finally {
+    btn.classList.remove("pending");
+  }
+}
+
+function showBanner(type, text) {
+  bannerEl.textContent = text;
+  bannerEl.className = `banner show ${type}`;
+  clearTimeout(showBanner._t);
+  showBanner._t = setTimeout(() => bannerEl.classList.remove("show"), 3500);
+}
+
+loadItems();
+</script>
+
+</body>
+</html>
