@@ -1,7 +1,7 @@
 {
   "supaUrl": "https://yybeoshbfutlaxcknbcw.supabase.co",
   "supaKey": "sb_publishable_w0fyA7GpxuV_DiIBNZ5Lxw_RPHBSMKW",
-  "flowUrl": "https://default43cd3e87970a40f698fb4f545be488.48.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/29/workflows/c8731f715d5a48f4aeb3646b7972e2fd/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=qAO7u2czBiRsLkI_QSMNQa-5QoQLrcCjhQnk8huOfBA",
+  "flowUrl": "https://default43cd3e87970a40f698fb4f545be488.48.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/11/workflows/82bba90e9d59404797244b1a75016b87/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=tjSp5ONbvryOi9vjLWMd6zvediMq3XPiOSTRWjvIT0w",
   "truck": "trailer",
   "deviceId": "216CS149B1001022"
 }
