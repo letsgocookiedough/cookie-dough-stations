@@ -310,7 +310,7 @@
   <footer class="note">
     Connected to Supabase (orders table). Only orders with status "done" count toward sales and flavor totals — canceled and awaiting-payment orders are excluded.<br>
     Sales dollars are broken out by truck and totals, not by flavor — the underlying order data doesn't record a price per line item, so a per-flavor dollar split isn't reliable to compute. Flavor breakdown here is by unit count.<br>
-    Square transaction history import is planned for a later phase.
+    Includes historical Square sales through 8/22/2026 alongside live kiosk data. Historical tips aren't broken out by Square's item-level export, so tips only reflect live kiosk orders.
   </footer>
 
 </div>
@@ -319,6 +319,7 @@
 const SUPABASE_URL = "https://yybeoshbfutlaxcknbcw.supabase.co";
 const SUPABASE_KEY = "sb_publishable_w0fyA7GpxuV_DiIBNZ5Lxw_RPHBSMKW";
 const TABLE = "orders";
+const HISTORY_TABLE = "square_history";
 
 let state = {
   truck: "total",
@@ -351,7 +352,7 @@ function applyPreset(preset){
     const s = new Date(now.getFullYear(), now.getMonth(), 1);
     start = toLocalDateStr(s); end = toLocalDateStr(now);
   } else if(preset === "all"){
-    start = "2026-01-01"; end = toLocalDateStr(now);
+    start = "2025-01-01"; end = toLocalDateStr(now);
   }
   state.startDate = start;
   state.endDate = end;
@@ -364,33 +365,66 @@ function formatFlavor(key){
 }
 
 async function fetchAllOrders(startISO, endISO, truck){
-  let selectCols = "truck,items,status,subtotal_amount,total_amount,tax_amount,tip_amount,created_at";
-  let base = `${SUPABASE_URL}/rest/v1/${TABLE}?select=${selectCols}&created_at=gte.${encodeURIComponent(startISO)}&created_at=lte.${encodeURIComponent(endISO)}&order=created_at.asc`;
-  if(truck !== "total"){
-    base += `&truck=eq.${truck}`;
-  }
-  let all = [];
-  let offset = 0;
-  const pageSize = 1000;
-  while(true){
-    const res = await fetch(base, {
-      headers: {
-        apikey: SUPABASE_KEY,
-        Authorization: `Bearer ${SUPABASE_KEY}`,
-        Prefer: "count=exact",
-        Range: `${offset}-${offset+pageSize-1}`
-      }
-    });
-    if(!res.ok){
-      const text = await res.text();
-      throw new Error(`Supabase request failed (${res.status}): ${text}`);
+  const done = [];
+  const push = (batch) => {
+    for(const row of batch){
+      done.push({
+        truck: row.truck,
+        items: row.items,
+        status: row.status || "done",
+        subtotal_amount: row.subtotal_amount,
+        total_amount: row.total_amount,
+        tax_amount: row.tax_amount,
+        tip_amount: row.tip_amount || 0,
+        created_at: row.created_at
+      });
     }
-    const batch = await res.json();
-    all = all.concat(batch);
-    if(batch.length < pageSize) break;
-    offset += pageSize;
+  };
+
+  async function fetchTable(table, extraSelect){
+    let cols = ["truck","items"];
+    if(extraSelect) cols.push(extraSelect);
+    cols.push("subtotal_amount","total_amount","tax_amount","created_at");
+    let selectCols = cols.join(",");
+    let base = `${SUPABASE_URL}/rest/v1/${table}?select=${selectCols}&created_at=gte.${encodeURIComponent(startISO)}&created_at=lte.${encodeURIComponent(endISO)}&order=created_at.asc`;
+    if(truck !== "total"){
+      base += `&truck=eq.${truck}`;
+    }
+    let offset = 0;
+    const pageSize = 1000;
+    let all = [];
+    while(true){
+      const res = await fetch(base, {
+        headers: {
+          apikey: SUPABASE_KEY,
+          Authorization: `Bearer ${SUPABASE_KEY}`,
+          Prefer: "count=exact",
+          Range: `${offset}-${offset+pageSize-1}`
+        }
+      });
+      if(!res.ok){
+        const text = await res.text();
+        throw new Error(`Supabase request failed on ${table} (${res.status}): ${text}`);
+      }
+      const batch = await res.json();
+      all = all.concat(batch);
+      if(batch.length < pageSize) break;
+      offset += pageSize;
+    }
+    return all;
   }
-  return all;
+
+  const liveRows = await fetchTable(TABLE, "status,tip_amount");
+  push(liveRows);
+
+  try{
+    const historyRows = await fetchTable(HISTORY_TABLE, "");
+    push(historyRows.map(r => ({...r, status: "done", tip_amount: 0})));
+  } catch(e){
+    console.warn("square_history table not available yet:", e.message);
+  }
+
+  return done;
 }
 
 function render(orders){
