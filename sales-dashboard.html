@@ -139,10 +139,10 @@
     color:var(--cocoa-soft);
     font-size:13px;
   }
-  #status-line{
+  #statusLine{
     font-size:13px;
     color:var(--cocoa-soft);
-    margin:-8px 0 20px;
+    margin:0 0 26px;
     min-height:18px;
   }
   .hero-row{
@@ -193,12 +193,6 @@
   @media (max-width:640px){ .stat-strip{grid-template-columns:1fr 1fr;} }
   .stat-strip .card{ padding:14px 16px; }
   .stat-strip .value{ font-size:22px; }
-  .excluded-note{
-    font-size:13px;
-    color:var(--cherry);
-    margin:-14px 0 30px;
-  }
-  .excluded-note.hidden{ display:none; }
   section.flavors h2{
     font-family:'Fraunces',serif;
     font-size:19px;
@@ -283,7 +277,6 @@
   </div>
 
   <div id="statusLine">Loading orders…</div>
-  <div id="excludedNote" class="excluded-note hidden"></div>
 
   <div class="hero-row">
     <div class="card hero">
@@ -315,7 +308,7 @@
   </section>
 
   <footer class="note">
-    Connected to Supabase (orders table). Only orders with status "done" count toward sales and flavor totals — canceled and awaiting-payment orders are tallied separately above but excluded from every dollar and unit figure.<br>
+    Connected to Supabase (orders table). Only orders with status "done" count toward sales and flavor totals — canceled and awaiting-payment orders are excluded.<br>
     Sales dollars are broken out by truck and totals, not by flavor — the underlying order data doesn't record a price per line item, so a per-flavor dollar split isn't reliable to compute. Flavor breakdown here is by unit count.<br>
     Square transaction history import is planned for a later phase.
   </footer>
@@ -402,8 +395,6 @@ async function fetchAllOrders(startISO, endISO, truck){
 
 function render(orders){
   const done = orders.filter(o => o.status === "done");
-  const canceled = orders.filter(o => o.status === "canceled");
-  const other = orders.filter(o => o.status !== "done" && o.status !== "canceled");
 
   const sumField = (arr, field) => arr.reduce((s,o) => s + (Number(o[field]) || 0), 0);
 
@@ -433,18 +424,6 @@ function render(orders){
   $("tipValue").textContent = fmtMoney(tips);
   $("avgValue").textContent = fmtMoney(avg);
   $("unitsValue").textContent = fmtInt(totalUnits);
-
-  const excludedCount = canceled.length + other.length;
-  const excludedEl = $("excludedNote");
-  if(excludedCount > 0){
-    let parts = [];
-    if(canceled.length) parts.push(`${canceled.length} canceled`);
-    if(other.length) parts.push(`${other.length} awaiting payment / other`);
-    excludedEl.textContent = `${fmtInt(excludedCount)} order${excludedCount===1?'':'s'} in this range excluded from totals (${parts.join(', ')})`;
-    excludedEl.classList.remove("hidden");
-  } else {
-    excludedEl.classList.add("hidden");
-  }
 
   const sortedFlavors = Object.entries(flavorCounts).sort((a,b) => b[1]-a[1]);
   const maxCount = sortedFlavors.length ? sortedFlavors[0][1] : 1;
