@@ -516,7 +516,7 @@ async function fetchOrders(){
       }
     });
 
-    const currentOpenIds = new Set(allOrders.filter(o => o.status === 'paid').map(o => o.id));
+    const currentOpenIds = new Set(filteredByTruck(allOrders.filter(o => o.status === 'paid')).map(o => o.id));
     if(knownOpenIds !== null){
       let hasNew = false;
       currentOpenIds.forEach(id => { if(!knownOpenIds.has(id) && !pendingSync[id]) hasNew = true; });
