@@ -121,7 +121,7 @@
     background:var(--dough-2); border:1px solid var(--line); border-radius:18px;
   }
   .item .thumb{
-    width:100%; aspect-ratio:4/3;
+    width:100%; aspect-ratio:4/3; position:relative;
     background-size:cover; background-position:center;
     background-color:rgba(217,153,61,0.18);
     display:flex; align-items:center; justify-content:center;
@@ -131,6 +131,21 @@
   .item .info .name{font-family:'Fredoka',sans-serif; font-size:28px; font-weight:600;}
   .item .info .price{font-size:20px; opacity:.7; margin-top:4px;}
   .item .info .ingredients{font-size:16px; opacity:.65; margin-top:8px; line-height:1.5;}
+  .item.soldOut{opacity:.72;}
+  .item.soldOut .thumb{filter:grayscale(0.85);}
+  .item.soldOut .info .name{opacity:.6;}
+  .item .soldOutRibbon{
+    position:absolute; top:16px; left:-34px; width:170px;
+    transform:rotate(-40deg); text-align:center;
+    background:var(--jam); color:#fff; font-family:'Fredoka',sans-serif; font-weight:700;
+    font-size:15px; letter-spacing:.03em; padding:5px 0;
+    box-shadow:0 3px 8px rgba(0,0,0,0.35);
+  }
+  .item .soldOutNotice{
+    margin:12px 18px 18px; padding:12px; text-align:center; border-radius:12px;
+    background:rgba(193,68,46,0.12); border:1px solid rgba(193,68,46,0.35);
+    color:var(--jam); font-weight:800; font-size:16px;
+  }
   .stepper{display:flex; align-items:center; justify-content:space-between; padding:12px 18px 18px; margin-top:auto;}
   .stepper button{
     width:68px; height:52px; border-radius:12px; border:none; cursor:pointer;
@@ -528,11 +543,10 @@ async function loadMenu(){
     const rows = await res.json();
     const truck = config.truck === 'trailer' ? 'trailer' : 'van';
     MENU = rows
-      .filter(r => r['available_'+truck])
       .map(r => ({
         id:r.id, name:r.name, price:Number(r['price_'+truck]),
         ingredients:r.ingredients || '', allergenWarning:r.allergen_warning || '',
-        imageUrl:r.image_url || ''
+        imageUrl:r.image_url || '', available: !!r['available_'+truck]
       }));
     renderMenu();
   } catch(e){
@@ -543,25 +557,32 @@ async function loadMenu(){
 function renderMenu(){
   const grid = document.getElementById('menuGrid');
   grid.innerHTML = MENU.map(item => `
-    <div class="item">
+    <div class="item ${item.available ? '' : 'soldOut'}">
       <div class="thumb" style="${item.imageUrl ? `background-image:url('${item.imageUrl}')` : ''}">
         ${item.imageUrl ? '' : escapeHtml((item.name||'?').charAt(0))}
+        ${item.available ? '' : '<div class="soldOutRibbon">OUT OF STOCK</div>'}
       </div>
       <div class="info">
         <div class="name">${item.name}</div>
         <div class="price">$${item.price.toFixed(2)}</div>
         ${item.ingredients ? `<div class="ingredients">${escapeHtml(item.ingredients)}</div>` : ''}
       </div>
-      <div class="stepper">
-        <button onclick="changeQty('${item.id}', -1)">−</button>
-        <span class="qty" id="qty-${item.id}">0</span>
-        <button class="plus" onclick="changeQty('${item.id}', 1)">+</button>
-      </div>
+      ${item.available ? `
+        <div class="stepper">
+          <button onclick="changeQty('${item.id}', -1)">−</button>
+          <span class="qty" id="qty-${item.id}">0</span>
+          <button class="plus" onclick="changeQty('${item.id}', 1)">+</button>
+        </div>
+      ` : `
+        <div class="soldOutNotice">Currently unavailable</div>
+      `}
     </div>
   `).join('');
 }
 
 function changeQty(id, delta){
+  const item = MENU.find(m => m.id === id);
+  if(item && !item.available) return; // shouldn't be reachable — the buttons don't render — but just in case
   const current = cart[id] || 0;
   const next = Math.max(0, current + delta);
   if(next === 0) delete cart[id]; else cart[id] = next;
@@ -727,11 +748,11 @@ function showPaymentChoice(customerName){
       <h2>How would you like to pay, ${escapeHtml(customerName)}?</h2>
       <p>$${grandTotal().toFixed(2)} total (incl. tax)</p>
       <div class="paymentChoiceGrid">
-        <button class="payOption" onclick="showTipChoice('${escapeHtml(customerName).replace(/'/g,"\\'")}', 'card')">
+        <button class="payOption" onclick="startCardPayment('${escapeHtml(customerName).replace(/'/g,"\\'")}')">
           <div class="payIcon">💳</div>
           <div>Pay by Card</div>
         </button>
-        <button class="payOption" onclick="showTipChoice('${escapeHtml(customerName).replace(/'/g,"\\'")}', 'cash')">
+        <button class="payOption" onclick="placeCashOrder('${escapeHtml(customerName).replace(/'/g,"\\'")}', 0)">
           <div class="payIcon">💵</div>
           <div>Pay Cash at Pickup</div>
         </button>
@@ -742,6 +763,17 @@ function showPaymentChoice(customerName){
       </div>
     </div>
   `);
+}
+
+function startCardPayment(customerName){
+  if(config.skipName){
+    // Window mode — staff drives the tablet, customer is at the Terminal
+    // themselves, so let the Terminal ask for the tip directly instead of
+    // pre-calculating one here.
+    placeOrder(customerName, 'card', 0, true);
+  } else {
+    showTipChoice(customerName, 'card');
+  }
 }
 
 let tipContextPaymentMethod = 'card';
@@ -884,7 +916,7 @@ async function placeCashOrder(customerName, tipAmount){
   }
 }
 
-async function placeOrder(customerName, paymentMethod, tipAmount){
+async function placeOrder(customerName, paymentMethod, tipAmount, terminalTip){
   if(!config.supaUrl || !config.supaKey || !config.flowUrl){
     alert('Fill in the setup panel (gear icon, top right) first.');
     return;
@@ -929,12 +961,16 @@ async function placeOrder(customerName, paymentMethod, tipAmount){
     const order = rows[0];
     currentOrderId = order.id;
 
-    // 2. Fire the checkout flow (Power Automate) with order id, amount, and tip
+    // 2. Fire the checkout flow (Power Automate) with order id, amount, and tip.
+    // When terminalTip is set, the Terminal prompts the customer for a tip itself —
+    // the amount shown here is the pre-tip total, since the real final charge
+    // isn't known until they choose one on the Terminal screen.
     showOverlay(`
       <div id="tapDipScreen">
         <div class="tapDipArrow">⬅</div>
         <div class="tapDipContent">
-          <div class="checkAmt">$${total.toFixed(2)}</div>
+          <div class="checkAmt">$${(terminalTip ? orderTotal : total).toFixed(2)}</div>
+          ${terminalTip ? '<p style="margin:-6px 0 6px; opacity:.75;">plus tip — terminal will ask</p>' : ''}
           <svg class="tapDipImg" viewBox="0 0 520 480" xmlns="http://www.w3.org/2000/svg">
             <rect x="140" y="40" width="200" height="300" rx="26" fill="var(--dough-2)" stroke="var(--ink)" stroke-width="3"/>
             <rect x="165" y="65" width="150" height="150" rx="12" fill="var(--ink)"/>
@@ -969,6 +1005,7 @@ async function placeOrder(customerName, paymentMethod, tipAmount){
         order_id: order.reference_id,
         amount: Math.round(orderTotal*100),
         tip_amount: Math.round(tip*100),
+        terminal_tip: !!terminalTip,
         device_id: config.deviceId
       })
     });
