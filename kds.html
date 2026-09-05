@@ -198,6 +198,35 @@
   #totalsView .compRevenue{font-family:'Fredoka',sans-serif; font-size:19px; color:var(--butter); margin-top:2px;}
   #totalsView .compNoData{font-size:12px; opacity:.4; padding:6px 0;}
   #totalsView .compLoading{font-size:13px; opacity:.5; padding:10px; width:100%; text-align:center;}
+
+  /* ---------- availability ---------- */
+  #availView{max-width:640px; margin:0 auto; padding:10px 20px 60px; display:none;}
+  .availCols{display:flex; gap:16px;}
+  .availCol{flex:1; min-width:0;}
+  .availColTitle{
+    font-family:'Fredoka',sans-serif; font-size:14px; text-transform:uppercase;
+    letter-spacing:.08em; opacity:.65; margin:0 0 10px; text-align:center;
+  }
+  .availList{background:rgba(247,241,227,0.06); border:1px solid var(--line); border-radius:14px; overflow:hidden;}
+  .availRow{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:14px 16px; border-bottom:1px solid var(--line); gap:10px;
+  }
+  .availRow:last-child{border-bottom:none;}
+  .availRow.off{opacity:.55;}
+  .availName{font-weight:700; font-size:14px; min-width:0;}
+  .availSwitch{
+    position:relative; width:46px; height:26px; border-radius:999px;
+    background:var(--jam); border:none; cursor:pointer; padding:0; flex-shrink:0;
+    transition:background .15s ease;
+  }
+  .availSwitch.on{background:var(--ok);}
+  .availSwitch::after{
+    content:''; position:absolute; top:3px; left:3px; width:20px; height:20px;
+    border-radius:50%; background:#fff; box-shadow:0 1px 3px rgba(0,0,0,0.35);
+    transition:transform .15s ease;
+  }
+  .availSwitch.on::after{transform:translateX(20px);}
 </style>
 </head>
 <body>
@@ -223,6 +252,9 @@
   <label>Power Automate — Reopen Order Flow URL</label>
   <input id="cfgReopenUrl" placeholder="https://prod-xx...invoke?...">
 
+  <label>Power Automate — Toggle Availability Flow URL</label>
+  <input id="cfgAvailUrl" placeholder="https://prod-xx...invoke?...">
+
   <label>Truck</label>
   <select id="cfgTruck">
     <option value="all">All</option>
@@ -243,6 +275,7 @@
   <button id="tabOpen" class="active" onclick="switchTab('open')">Open Orders<span class="count" id="openCount">0</span></button>
   <button id="tabDone" onclick="switchTab('done')">Completed<span class="count" id="doneCount">0</span></button>
   <button id="tabTotals" onclick="switchTab('totals')">Today's Totals</button>
+  <button id="tabAvail" onclick="switchTab('avail')">Availability</button>
 </div>
 
 <div id="railWrap">
@@ -256,6 +289,10 @@
   <div class="compareRow" id="compareRow">
     <div class="compLoading">Loading…</div>
   </div>
+</div>
+
+<div id="availView">
+  <div id="availBody"><div id="emptyState" style="display:block;">Loading…</div></div>
 </div>
 
 <script>
@@ -272,7 +309,8 @@ const DEFAULT_CONFIG = {
   supaKey: 'sb_publishable_w0fyA7GpxuV_DiIBNZ5Lxw_RPHBSMKW',
   bumpUrl: 'https://default43cd3e87970a40f698fb4f545be488.48.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/10/workflows/cc5eb04f80f545f986ae0286cfa82e13/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ta8MbzOIZF9EtTb4SdUMtdpqraXpcjuYuwzz3MG6Iwo',
   voidUrl: 'https://default43cd3e87970a40f698fb4f545be488.48.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/08/workflows/fccb6fb3b0fe4bd19ce79824455336bc/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=Y9DDan14Fdv3X-aB3m995yx3qnDlft3scNM_-NgOYq8',
-  reopenUrl: 'https://default43cd3e87970a40f698fb4f545be488.48.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/05/workflows/69b29f4eecc04729a8b1a9891a290d3d/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=CWCaHQYhpx_Ypwwkey_H9mX7_ufHp_IGIXlxKua9WPM'
+  reopenUrl: 'https://default43cd3e87970a40f698fb4f545be488.48.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/05/workflows/69b29f4eecc04729a8b1a9891a290d3d/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=CWCaHQYhpx_Ypwwkey_H9mX7_ufHp_IGIXlxKua9WPM',
+  availUrl: 'https://default43cd3e87970a40f698fb4f545be488.48.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/04/workflows/e7b8326d0b5641b7bd1d315e136af7cf/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=olL4sH2gqjkIyfaX0RvKrtJZPSAYXJagWrvU9smVJgQ'
 };
 
 let config = { ...DEFAULT_CONFIG, truck:'all' };
@@ -370,6 +408,7 @@ function saveConfig(){
   config.bumpUrl = document.getElementById('cfgBumpUrl').value.trim();
   config.voidUrl = document.getElementById('cfgVoidUrl').value.trim();
   config.reopenUrl = document.getElementById('cfgReopenUrl').value.trim();
+  config.availUrl = document.getElementById('cfgAvailUrl').value.trim();
   config.truck   = document.getElementById('cfgTruck').value;
   try{ localStorage.setItem('lgcd-kds-config', JSON.stringify(config)); } catch(e){}
   const note = document.getElementById('savedNote');
@@ -400,6 +439,7 @@ function loadConfig(){
   document.getElementById('cfgBumpUrl').value = config.bumpUrl || '';
   document.getElementById('cfgVoidUrl').value = config.voidUrl || '';
   document.getElementById('cfgReopenUrl').value = config.reopenUrl || '';
+  document.getElementById('cfgAvailUrl').value = config.availUrl || '';
   document.getElementById('cfgTruck').value = config.truck || 'all';
 
   if(urlTruck === 'van' || urlTruck === 'trailer'){
@@ -432,9 +472,12 @@ function switchTab(tab){
   document.getElementById('tabOpen').classList.toggle('active', tab==='open');
   document.getElementById('tabDone').classList.toggle('active', tab==='done');
   document.getElementById('tabTotals').classList.toggle('active', tab==='totals');
-  document.getElementById('railWrap').style.display = (tab==='totals') ? 'none' : 'block';
+  document.getElementById('tabAvail').classList.toggle('active', tab==='avail');
+  document.getElementById('railWrap').style.display = (tab==='totals' || tab==='avail') ? 'none' : 'block';
   document.getElementById('totalsView').style.display = (tab==='totals') ? 'block' : 'none';
+  document.getElementById('availView').style.display = (tab==='avail') ? 'block' : 'none';
   if(tab === 'totals') loadComparisons();
+  if(tab === 'avail') loadAvailability();
   render();
 }
 
@@ -605,6 +648,85 @@ function renderTotals(orders){
       `).join('')
     }
   `;
+}
+
+let availItems = [];
+
+async function loadAvailability(){
+  if(!config.supaUrl || !config.supaKey) return;
+  try{
+    const res = await fetch(`${config.supaUrl}/rest/v1/menu_items?select=id,name,sort_order,available_van,available_trailer&order=sort_order.asc`, {
+      headers:{ 'apikey': config.supaKey, 'Authorization': 'Bearer '+config.supaKey }
+    });
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    availItems = await res.json();
+    renderAvailability();
+  } catch(e){
+    document.getElementById('availBody').innerHTML =
+      '<div id="emptyState" style="display:block;">Couldn\'t load items — check the connection.</div>';
+  }
+}
+
+function availColumn(truck, title){
+  const key = 'available_' + truck;
+  const rows = availItems.map(item => {
+    const isOn = !!item[key];
+    return `
+      <div class="availRow ${isOn ? '' : 'off'}">
+        <div class="availName">${escapeHtml(item.name)}</div>
+        <button class="availSwitch ${isOn ? 'on' : ''}" onclick="toggleAvailability('${item.id}','${truck}')" aria-label="Toggle ${escapeHtml(item.name)} on ${truck}"></button>
+      </div>
+    `;
+  }).join('');
+  return `
+    <div class="availCol">
+      ${title ? `<div class="availColTitle">${title}</div>` : ''}
+      <div class="availList">${rows}</div>
+    </div>
+  `;
+}
+
+// A device locked to one truck (config.truck === 'van' or 'trailer') only ever
+// shows and writes that truck's column — the safest option, since there's no
+// second column to fat-finger. A shared/admin device (config.truck === 'all')
+// shows both, clearly labeled, side by side.
+function renderAvailability(){
+  const body = document.getElementById('availBody');
+  if(!availItems.length){
+    body.innerHTML = '<div id="emptyState" style="display:block;">No items found.</div>';
+    return;
+  }
+  if(config.truck === 'van' || config.truck === 'trailer'){
+    body.innerHTML = `<div class="availCols">${availColumn(config.truck, null)}</div>`;
+  } else {
+    body.innerHTML = `<div class="availCols">${availColumn('van','VAN')}${availColumn('trailer','TRAILER')}</div>`;
+  }
+}
+
+function toggleAvailability(id, truck){
+  if(!config.availUrl){ alert('Set the Toggle Availability Flow URL in setup first.'); return; }
+  const item = availItems.find(i => i.id === id);
+  if(!item) return;
+  const key = 'available_' + truck;
+  const newValue = !item[key];
+
+  // Optimistic update, same pattern as bump/void/reopen — but this one reverts
+  // and alerts on failure rather than staying silent, since a stuck-wrong
+  // availability flag can mean selling something that's actually sold out.
+  item[key] = newValue;
+  renderAvailability();
+
+  fetch(config.availUrl, {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ id, truck, available: newValue })
+  }).then(res => {
+    if(!res.ok) throw new Error('HTTP '+res.status);
+  }).catch(() => {
+    item[key] = !newValue;
+    renderAvailability();
+    alert(`Couldn't update ${item.name} — check the connection and try again.`);
+  });
 }
 
 function shiftDate(date, { days = 0, months = 0, years = 0 }){
