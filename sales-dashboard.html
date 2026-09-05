@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Let's Go Cookie Dough — Sales</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --cream:#FAF3E7;
+    --dough:#EFE2C6;
+    --dough-line:#E0CFA8;
+    --cocoa:#3A2314;
+    --cocoa-soft:#6B5240;
+    --caramel:#C97B3D;
+    --caramel-dark:#A85F27;
+    --cherry:#A94436;
+    --sage:#6E8B5B;
+    --card-shadow: 0 1px 0 rgba(58,35,20,0.06);
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--cream);
+    color:var(--cocoa);
+    font-family:'Inter',sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{
+    max-width:920px;
+    margin:0 auto;
+    padding:28px 20px 60px;
+  }
+  header.top{
+    display:flex;
+    align-items:flex-end;
+    justify-content:space-between;
+    flex-wrap:wrap;
+    gap:16px;
+    margin-bottom:22px;
+  }
+  .brand{
+    font-family:'Fraunces',serif;
+    font-weight:700;
+    font-size:26px;
+    letter-spacing:-0.01em;
+    position:relative;
+  }
+  .brand::after{
+    content:"";
+    display:block;
+    width:100%;
+    height:6px;
+    margin-top:4px;
+    background-image:
+      radial-gradient(circle at 6px 3px, var(--cocoa) 2.2px, transparent 2.3px),
+      radial-gradient(circle at 26px 3px, var(--cocoa) 1.6px, transparent 1.7px),
+      radial-gradient(circle at 46px 3px, var(--cocoa) 2px, transparent 2.1px),
+      radial-gradient(circle at 66px 3px, var(--cocoa) 1.4px, transparent 1.5px),
+      radial-gradient(circle at 86px 3px, var(--cocoa) 2px, transparent 2.1px);
+    background-repeat:repeat-x;
+    background-size:100px 6px;
+    opacity:0.35;
+  }
+  .brand small{
+    display:block;
+    font-family:'Inter',sans-serif;
+    font-weight:500;
+    font-size:13px;
+    color:var(--cocoa-soft);
+    margin-top:2px;
+  }
+  .truck-toggle{
+    display:flex;
+    background:var(--dough);
+    border-radius:10px;
+    padding:4px;
+    gap:2px;
+  }
+  .truck-toggle button{
+    border:none;
+    background:transparent;
+    padding:9px 16px;
+    border-radius:7px;
+    font-family:'Inter',sans-serif;
+    font-weight:600;
+    font-size:14px;
+    color:var(--cocoa-soft);
+    cursor:pointer;
+    transition:background .15s ease, color .15s ease;
+  }
+  .truck-toggle button.active{
+    background:var(--cocoa);
+    color:var(--cream);
+  }
+  .controls{
+    display:flex;
+    align-items:center;
+    flex-wrap:wrap;
+    gap:8px;
+    margin-bottom:26px;
+    padding-bottom:20px;
+    border-bottom:1px solid var(--dough-line);
+  }
+  .preset-btn{
+    border:1px solid var(--dough-line);
+    background:#fff;
+    color:var(--cocoa);
+    padding:7px 13px;
+    border-radius:8px;
+    font-size:13px;
+    font-weight:500;
+    cursor:pointer;
+    font-family:'Inter',sans-serif;
+  }
+  .preset-btn.active{
+    background:var(--caramel);
+    border-color:var(--caramel);
+    color:#fff;
+  }
+  .date-inputs{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    margin-left:8px;
+  }
+  .date-inputs input{
+    border:1px solid var(--dough-line);
+    border-radius:8px;
+    padding:6px 9px;
+    font-family:'Inter',sans-serif;
+    font-size:13px;
+    color:var(--cocoa);
+    background:#fff;
+  }
+  .date-inputs span{
+    color:var(--cocoa-soft);
+    font-size:13px;
+  }
+  #status-line{
+    font-size:13px;
+    color:var(--cocoa-soft);
+    margin:-8px 0 20px;
+    min-height:18px;
+  }
+  .hero-row{
+    display:grid;
+    grid-template-columns:1.3fr 1fr 1fr;
+    gap:14px;
+    margin-bottom:14px;
+  }
+  @media (max-width:640px){ .hero-row{grid-template-columns:1fr 1fr;} }
+  .card{
+    background:#fff;
+    border:1px solid var(--dough-line);
+    border-radius:14px;
+    padding:18px 20px;
+    box-shadow:var(--card-shadow);
+  }
+  .card.hero{
+    background:var(--cocoa);
+    color:var(--cream);
+    border:none;
+  }
+  .card .label{
+    font-size:12.5px;
+    font-weight:600;
+    color:var(--cocoa-soft);
+    margin-bottom:6px;
+  }
+  .card.hero .label{ color:#D8C6B4; }
+  .card .value{
+    font-family:'Fraunces',serif;
+    font-weight:600;
+    font-size:34px;
+    line-height:1.1;
+  }
+  .card.hero .value{ font-size:42px; }
+  .card .sub{
+    font-size:12.5px;
+    color:var(--cocoa-soft);
+    margin-top:6px;
+  }
+  .card.hero .sub{ color:#C9B6A2; }
+  .stat-strip{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:14px;
+    margin-bottom:30px;
+  }
+  @media (max-width:640px){ .stat-strip{grid-template-columns:1fr 1fr;} }
+  .stat-strip .card{ padding:14px 16px; }
+  .stat-strip .value{ font-size:22px; }
+  .excluded-note{
+    font-size:13px;
+    color:var(--cherry);
+    margin:-14px 0 30px;
+  }
+  .excluded-note.hidden{ display:none; }
+  section.flavors h2{
+    font-family:'Fraunces',serif;
+    font-size:19px;
+    font-weight:600;
+    margin:0 0 4px;
+  }
+  section.flavors .hint{
+    font-size:13px;
+    color:var(--cocoa-soft);
+    margin-bottom:16px;
+  }
+  .flavor-row{
+    display:grid;
+    grid-template-columns:150px 1fr 56px;
+    align-items:center;
+    gap:12px;
+    padding:9px 0;
+  }
+  .flavor-row .fname{
+    font-size:14px;
+    font-weight:600;
+  }
+  .flavor-bar-track{
+    background:var(--dough);
+    border-radius:6px;
+    height:14px;
+    overflow:hidden;
+  }
+  .flavor-bar-fill{
+    background:var(--caramel);
+    height:100%;
+    border-radius:6px 0 0 6px;
+  }
+  .flavor-row .fcount{
+    text-align:right;
+    font-size:14px;
+    font-weight:700;
+    font-variant-numeric:tabular-nums;
+  }
+  .empty, .loading, .error{
+    padding:40px 0;
+    text-align:center;
+    color:var(--cocoa-soft);
+    font-size:14px;
+  }
+  .error{ color:var(--cherry); }
+  footer.note{
+    margin-top:40px;
+    padding-top:18px;
+    border-top:1px solid var(--dough-line);
+    font-size:12.5px;
+    color:var(--cocoa-soft);
+    line-height:1.6;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div class="brand">Sales
+      <small>Let's Go Cookie Dough</small>
+    </div>
+    <div class="truck-toggle" id="truckToggle">
+      <button data-truck="total" class="active">Total</button>
+      <button data-truck="trailer">Trailer</button>
+      <button data-truck="van">Van</button>
+    </div>
+  </header>
+
+  <div class="controls" id="controls">
+    <button class="preset-btn active" data-preset="today">Today</button>
+    <button class="preset-btn" data-preset="yesterday">Yesterday</button>
+    <button class="preset-btn" data-preset="7d">Last 7 days</button>
+    <button class="preset-btn" data-preset="month">This month</button>
+    <button class="preset-btn" data-preset="all">All time</button>
+    <div class="date-inputs">
+      <input type="date" id="startDate">
+      <span>to</span>
+      <input type="date" id="endDate">
+    </div>
+  </div>
+
+  <div id="statusLine">Loading orders…</div>
+  <div id="excludedNote" class="excluded-note hidden"></div>
+
+  <div class="hero-row">
+    <div class="card hero">
+      <div class="label">Sales (pre-tax)</div>
+      <div class="value" id="salesValue">—</div>
+      <div class="sub" id="salesSub">&nbsp;</div>
+    </div>
+    <div class="card">
+      <div class="label">Orders</div>
+      <div class="value" id="ordersValue">—</div>
+    </div>
+    <div class="card">
+      <div class="label">Collected (incl. tax)</div>
+      <div class="value" id="collectedValue">—</div>
+    </div>
+  </div>
+
+  <div class="stat-strip">
+    <div class="card"><div class="label">Tax collected</div><div class="value" id="taxValue">—</div></div>
+    <div class="card"><div class="label">Tips</div><div class="value" id="tipValue">—</div></div>
+    <div class="card"><div class="label">Avg order</div><div class="value" id="avgValue">—</div></div>
+    <div class="card"><div class="label">Units sold</div><div class="value" id="unitsValue">—</div></div>
+  </div>
+
+  <section class="flavors">
+    <h2>By flavor</h2>
+    <div class="hint">Units sold, ranked by volume. Excludes canceled and unpaid orders.</div>
+    <div id="flavorList"></div>
+  </section>
+
+  <footer class="note">
+    Connected to Supabase (orders table). Only orders with status "done" count toward sales and flavor totals — canceled and awaiting-payment orders are tallied separately above but excluded from every dollar and unit figure.<br>
+    Sales dollars are broken out by truck and totals, not by flavor — the underlying order data doesn't record a price per line item, so a per-flavor dollar split isn't reliable to compute. Flavor breakdown here is by unit count.<br>
+    Square transaction history import is planned for a later phase.
+  </footer>
+
+</div>
+
+<script>
+const SUPABASE_URL = "https://yybeoshbfutlaxcknbcw.supabase.co";
+const SUPABASE_KEY = "sb_publishable_w0fyA7GpxuV_DiIBNZ5Lxw_RPHBSMKW";
+const TABLE = "orders";
+
+let state = {
+  truck: "total",
+  preset: "today",
+  startDate: null,
+  endDate: null
+};
+
+const $ = (id) => document.getElementById(id);
+const fmtMoney = (n) => "$" + n.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2});
+const fmtInt = (n) => n.toLocaleString();
+
+function toLocalDateStr(d){
+  const y = d.getFullYear(), m = String(d.getMonth()+1).padStart(2,'0'), day = String(d.getDate()).padStart(2,'0');
+  return `${y}-${m}-${day}`;
+}
+
+function applyPreset(preset){
+  const now = new Date();
+  let start, end;
+  if(preset === "today"){
+    start = end = toLocalDateStr(now);
+  } else if(preset === "yesterday"){
+    const y = new Date(now); y.setDate(y.getDate()-1);
+    start = end = toLocalDateStr(y);
+  } else if(preset === "7d"){
+    const s = new Date(now); s.setDate(s.getDate()-6);
+    start = toLocalDateStr(s); end = toLocalDateStr(now);
+  } else if(preset === "month"){
+    const s = new Date(now.getFullYear(), now.getMonth(), 1);
+    start = toLocalDateStr(s); end = toLocalDateStr(now);
+  } else if(preset === "all"){
+    start = "2026-01-01"; end = toLocalDateStr(now);
+  }
+  state.startDate = start;
+  state.endDate = end;
+  $("startDate").value = start;
+  $("endDate").value = end;
+}
+
+function formatFlavor(key){
+  return key.split('_').map(w => w.toLowerCase() === 'gf' ? 'GF' : (w.charAt(0).toUpperCase() + w.slice(1))).join(' ');
+}
+
+async function fetchAllOrders(startISO, endISO, truck){
+  let selectCols = "truck,items,status,subtotal_amount,total_amount,tax_amount,tip_amount,created_at";
+  let base = `${SUPABASE_URL}/rest/v1/${TABLE}?select=${selectCols}&created_at=gte.${encodeURIComponent(startISO)}&created_at=lte.${encodeURIComponent(endISO)}&order=created_at.asc`;
+  if(truck !== "total"){
+    base += `&truck=eq.${truck}`;
+  }
+  let all = [];
+  let offset = 0;
+  const pageSize = 1000;
+  while(true){
+    const res = await fetch(base, {
+      headers: {
+        apikey: SUPABASE_KEY,
+        Authorization: `Bearer ${SUPABASE_KEY}`,
+        Prefer: "count=exact",
+        Range: `${offset}-${offset+pageSize-1}`
+      }
+    });
+    if(!res.ok){
+      const text = await res.text();
+      throw new Error(`Supabase request failed (${res.status}): ${text}`);
+    }
+    const batch = await res.json();
+    all = all.concat(batch);
+    if(batch.length < pageSize) break;
+    offset += pageSize;
+  }
+  return all;
+}
+
+function render(orders){
+  const done = orders.filter(o => o.status === "done");
+  const canceled = orders.filter(o => o.status === "canceled");
+  const other = orders.filter(o => o.status !== "done" && o.status !== "canceled");
+
+  const sumField = (arr, field) => arr.reduce((s,o) => s + (Number(o[field]) || 0), 0);
+
+  const salesSubtotal = sumField(done, "subtotal_amount");
+  const salesTotal = sumField(done, "total_amount");
+  const tax = sumField(done, "tax_amount");
+  const tips = sumField(done, "tip_amount");
+  const orderCount = done.length;
+  const avg = orderCount ? salesSubtotal / orderCount : 0;
+
+  const flavorCounts = {};
+  let totalUnits = 0;
+  for(const o of done){
+    if(!o.items) continue;
+    for(const [flavor, qty] of Object.entries(o.items)){
+      const q = Number(qty) || 0;
+      flavorCounts[flavor] = (flavorCounts[flavor] || 0) + q;
+      totalUnits += q;
+    }
+  }
+
+  $("salesValue").textContent = fmtMoney(salesSubtotal);
+  $("salesSub").textContent = `${fmtInt(orderCount)} completed order${orderCount===1?'':'s'}`;
+  $("ordersValue").textContent = fmtInt(orderCount);
+  $("collectedValue").textContent = fmtMoney(salesTotal);
+  $("taxValue").textContent = fmtMoney(tax);
+  $("tipValue").textContent = fmtMoney(tips);
+  $("avgValue").textContent = fmtMoney(avg);
+  $("unitsValue").textContent = fmtInt(totalUnits);
+
+  const excludedCount = canceled.length + other.length;
+  const excludedEl = $("excludedNote");
+  if(excludedCount > 0){
+    let parts = [];
+    if(canceled.length) parts.push(`${canceled.length} canceled`);
+    if(other.length) parts.push(`${other.length} awaiting payment / other`);
+    excludedEl.textContent = `${fmtInt(excludedCount)} order${excludedCount===1?'':'s'} in this range excluded from totals (${parts.join(', ')})`;
+    excludedEl.classList.remove("hidden");
+  } else {
+    excludedEl.classList.add("hidden");
+  }
+
+  const sortedFlavors = Object.entries(flavorCounts).sort((a,b) => b[1]-a[1]);
+  const maxCount = sortedFlavors.length ? sortedFlavors[0][1] : 1;
+  const listEl = $("flavorList");
+  listEl.innerHTML = "";
+  if(sortedFlavors.length === 0){
+    listEl.innerHTML = `<div class="empty">No completed orders in this range.</div>`;
+  } else {
+    for(const [flavor, count] of sortedFlavors){
+      const pct = Math.max(4, (count / maxCount) * 100);
+      const row = document.createElement("div");
+      row.className = "flavor-row";
+      row.innerHTML = `
+        <div class="fname">${formatFlavor(flavor)}</div>
+        <div class="flavor-bar-track"><div class="flavor-bar-fill" style="width:${pct}%"></div></div>
+        <div class="fcount">${fmtInt(count)}</div>
+      `;
+      listEl.appendChild(row);
+    }
+  }
+}
+
+async function refresh(){
+  const statusEl = $("statusLine");
+  statusEl.textContent = "Loading orders…";
+  statusEl.style.color = "";
+  try{
+    const startISO = new Date(state.startDate + "T00:00:00").toISOString();
+    const endISO = new Date(state.endDate + "T23:59:59.999").toISOString();
+    const orders = await fetchAllOrders(startISO, endISO, state.truck);
+    render(orders);
+    const rangeLabel = state.startDate === state.endDate ? state.startDate : `${state.startDate} – ${state.endDate}`;
+    statusEl.textContent = `${rangeLabel} · ${state.truck === "total" ? "Trailer + Van" : state.truck.charAt(0).toUpperCase()+state.truck.slice(1)}`;
+  } catch(err){
+    statusEl.textContent = `Couldn't load data: ${err.message}`;
+    statusEl.style.color = "var(--cherry)";
+    console.error(err);
+  }
+}
+
+document.getElementById("truckToggle").addEventListener("click", (e) => {
+  const btn = e.target.closest("button");
+  if(!btn) return;
+  document.querySelectorAll("#truckToggle button").forEach(b => b.classList.remove("active"));
+  btn.classList.add("active");
+  state.truck = btn.dataset.truck;
+  refresh();
+});
+
+document.getElementById("controls").addEventListener("click", (e) => {
+  const btn = e.target.closest(".preset-btn");
+  if(!btn) return;
+  document.querySelectorAll(".preset-btn").forEach(b => b.classList.remove("active"));
+  btn.classList.add("active");
+  state.preset = btn.dataset.preset;
+  applyPreset(state.preset);
+  refresh();
+});
+
+$("startDate").addEventListener("change", () => {
+  state.startDate = $("startDate").value;
+  document.querySelectorAll(".preset-btn").forEach(b => b.classList.remove("active"));
+  refresh();
+});
+$("endDate").addEventListener("change", () => {
+  state.endDate = $("endDate").value;
+  document.querySelectorAll(".preset-btn").forEach(b => b.classList.remove("active"));
+  refresh();
+});
+
+applyPreset("today");
+refresh();
+</script>
+</body>
+</html>
