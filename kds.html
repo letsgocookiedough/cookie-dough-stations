@@ -199,6 +199,11 @@
   #totalsView .compRevenue{font-family:'Fredoka',sans-serif; font-size:19px; color:var(--butter); margin-top:2px;}
   #totalsView .compNoData{font-size:12px; opacity:.4; padding:6px 0;}
   #totalsView .compLoading{font-size:13px; opacity:.5; padding:10px; width:100%; text-align:center;}
+  #hourlyChart{margin-top:22px;}
+  #hourlyChart svg{overflow:visible;}
+  .hourlyBar{fill:var(--butter);}
+  .hourlyValue{fill:var(--butter); font-size:11px; font-weight:700;}
+  .hourlyLabel{fill:var(--cream); font-size:11px; opacity:.7;}
 
   /* ---------- availability ---------- */
   #availView{max-width:640px; margin:0 auto; padding:10px 20px 60px; display:none;}
@@ -290,6 +295,7 @@
   <div class="compareRow" id="compareRow">
     <div class="compLoading">Loading…</div>
   </div>
+  <div id="hourlyChart"></div>
 </div>
 
 <div id="availView">
@@ -648,6 +654,56 @@ function renderTotals(orders){
         </div>
       `).join('')
     }
+  `;
+  renderHourlyChart(orders);
+}
+
+function formatHourLabel(h){
+  const period = h < 12 ? 'a' : 'p';
+  let hr = h % 12;
+  if(hr === 0) hr = 12;
+  return hr + period;
+}
+
+function renderHourlyChart(orders){
+  const el = document.getElementById('hourlyChart');
+  if(!el) return;
+
+  const hourly = new Array(24).fill(0);
+  orders.forEach(o => {
+    const h = new Date(o.created_at).getHours();
+    hourly[h] += Number(o.total_amount || 0);
+  });
+
+  const activeHours = hourly.map((v,i) => ({h:i, v})).filter(x => x.v > 0);
+  if(!activeHours.length){ el.innerHTML = ''; return; }
+
+  const minH = Math.min(...activeHours.map(x => x.h));
+  const maxH = Math.max(...activeHours.map(x => x.h));
+  const hours = [];
+  for(let h = minH; h <= maxH; h++) hours.push({ h, v: hourly[h] });
+
+  const maxV = Math.max(...hours.map(x => x.v), 1);
+  const barW = 34, gap = 14, padL = 8, padB = 22, padT = 24, chartH = 110;
+  const width = padL*2 + hours.length*(barW+gap) - gap;
+  const height = chartH + padB + padT;
+
+  const bars = hours.map((x,i) => {
+    const bh = Math.max(Math.round((x.v / maxV) * chartH), x.v > 0 ? 3 : 0);
+    const x0 = padL + i*(barW+gap);
+    const y0 = padT + (chartH - bh);
+    return `
+      ${x.v > 0 ? `<text class="hourlyValue" x="${x0+barW/2}" y="${padT - 8}" text-anchor="middle">$${Math.round(x.v)}</text>` : ''}
+      <rect class="hourlyBar" x="${x0}" y="${y0}" width="${barW}" height="${bh}" rx="4" opacity="${x.v > 0 ? 1 : 0.25}"></rect>
+      <text class="hourlyLabel" x="${x0+barW/2}" y="${height-4}" text-anchor="middle">${formatHourLabel(x.h)}</text>
+    `;
+  }).join('');
+
+  el.innerHTML = `
+    <div class="compareHeading">Sales by hour</div>
+    <svg viewBox="0 0 ${width} ${height}" style="width:100%; height:auto; display:block;">
+      ${bars}
+    </svg>
   `;
 }
 
