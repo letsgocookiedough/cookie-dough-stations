@@ -132,6 +132,12 @@
   .item .info .price{font-size:20px; opacity:.7; margin-top:4px;}
   .item .info .ingredients{font-size:16px; opacity:.65; margin-top:8px; line-height:1.5;}
   .item.soldOut{opacity:.72;}
+  .item.customTile{
+    border:2px dashed var(--sky); background:rgba(143,193,222,0.08);
+    display:flex; align-items:center; justify-content:center; min-height:180px;
+    cursor:pointer; text-align:center;
+  }
+  .item.customTile .name{color:var(--sky);}
   .item.soldOut .thumb{filter:grayscale(0.85);}
   .item.soldOut .info .name{opacity:.6;}
   .item .soldOutRibbon{
@@ -415,6 +421,7 @@
 let MENU = [];
 
 let cart = {};       // { itemId: qty }
+let customLine = null; // { label, amount } — window-mode-only custom price/discount line
 // ============================================================
 // PER-DEVICE CONFIG — fill this in before uploading a copy of this
 // file for a specific kiosk (e.g. kioskvan1.html, kiosktrailer2.html).
@@ -577,7 +584,14 @@ function renderMenu(){
         <div class="soldOutNotice">Currently unavailable</div>
       `}
     </div>
-  `).join('');
+  `).join('') + (config.skipName ? `
+    <div class="item customTile" onclick="showCustomLinePrompt()">
+      <div class="info" style="padding-top:20px;">
+        <div class="name">${customLine ? '✎ ' + escapeHtml(customLine.label || 'Custom') : '+ Custom Price / Discount'}</div>
+        ${customLine ? `<div class="price" style="color:${customLine.amount < 0 ? 'var(--jam)' : 'var(--butter)'};">${customLine.amount < 0 ? '−' : ''}$${Math.abs(customLine.amount).toFixed(2)}</div>` : `<div class="ingredients">Tap to add a manual price — discounts, coupons, price adjustments</div>`}
+      </div>
+    </div>
+  ` : '');
 }
 
 function changeQty(id, delta){
@@ -591,10 +605,11 @@ function changeQty(id, delta){
 }
 
 function cartTotalAmount(){
-  return Object.entries(cart).reduce((sum,[id,qty])=>{
+  const itemsTotal = Object.entries(cart).reduce((sum,[id,qty])=>{
     const item = MENU.find(m=>m.id===id);
     return sum + (item ? item.price*qty : 0);
   }, 0);
+  return itemsTotal + (customLine ? customLine.amount : 0);
 }
 
 // Menu prices are tax-inclusive — the customer pays exactly this, nothing added.
@@ -627,12 +642,12 @@ function renderCartPanel(){
   const empty = document.getElementById('cartPanelEmpty');
   const entries = Object.entries(cart);
 
-  if(entries.length === 0){
+  if(entries.length === 0 && !customLine){
     wrap.innerHTML = '';
     empty.style.display = 'block';
   } else {
     empty.style.display = 'none';
-    wrap.innerHTML = entries.map(([id,qty])=>{
+    let html = entries.map(([id,qty])=>{
       const item = MENU.find(m=>m.id===id);
       if(!item) return '';
       return `
@@ -647,10 +662,61 @@ function renderCartPanel(){
         </div>
       `;
     }).join('');
+    if(customLine){
+      html += `
+        <div class="cartLine">
+          <div class="cartLineName">${escapeHtml(customLine.label || 'Custom')}</div>
+          <div class="cartLineControls">
+            <button onclick="showCustomLinePrompt()" title="Edit">✎</button>
+            <button onclick="removeCustomLine()" title="Remove">✕</button>
+          </div>
+          <div class="cartLinePrice">${customLine.amount < 0 ? '−' : ''}$${Math.abs(customLine.amount).toFixed(2)}</div>
+        </div>
+      `;
+    }
+    wrap.innerHTML = html;
   }
   document.getElementById('cartPanelSubtotal').textContent = '$'+preTaxSubtotal().toFixed(2);
   document.getElementById('cartPanelTax').textContent = '$'+taxAmount().toFixed(2);
   document.getElementById('cartPanelTotal').textContent = '$'+grandTotal().toFixed(2);
+}
+
+function showCustomLinePrompt(){
+  showOverlay(`
+    <div id="customLinePrompt">
+      <h2 style="margin-bottom:6px;">Custom Price / Discount</h2>
+      <p style="margin-bottom:22px;">For coupons, discounts, or price adjustments. Use a negative amount to discount.</p>
+      <input id="customLineLabel" type="text" placeholder="Description (e.g. Market Discount)" maxlength="40" autocomplete="off" style="width:100%; max-width:420px; padding:18px; margin-bottom:16px; border-radius:14px; border:2px solid var(--sky); background:rgba(27,36,48,0.08); color:var(--cream); font-size:22px; text-align:center; font-family:'Nunito',sans-serif;">
+      <input id="customLineAmount" type="number" step="0.01" placeholder="Amount, e.g. -2.00 or 4.00" style="width:100%; max-width:420px; padding:18px; margin-bottom:22px; border-radius:14px; border:2px solid var(--sky); background:rgba(27,36,48,0.08); color:var(--cream); font-size:26px; text-align:center; font-family:'Fredoka',sans-serif;">
+      <br>
+      <button class="continueBtn" onclick="confirmCustomLine()">Add to Order</button>
+      <div class="namePromptActions">
+        <button class="ghostBtn" onclick="hideOverlay()">Cancel</button>
+        ${customLine ? `<button class="ghostBtn cancelBtn" onclick="removeCustomLine(); hideOverlay();">Remove Line</button>` : ''}
+      </div>
+    </div>
+  `);
+  if(customLine){
+    document.getElementById('customLineLabel').value = customLine.label || '';
+    document.getElementById('customLineAmount').value = customLine.amount;
+  }
+  setTimeout(()=> document.getElementById('customLineLabel').focus(), 150);
+}
+
+function confirmCustomLine(){
+  const label = document.getElementById('customLineLabel').value.trim() || 'Custom';
+  const amount = Math.round(Number(document.getElementById('customLineAmount').value) * 100) / 100;
+  if(!amount){ alert('Enter a non-zero amount.'); return; }
+  customLine = { label, amount };
+  hideOverlay();
+  renderMenu();
+  updateCartBar();
+}
+
+function removeCustomLine(){
+  customLine = null;
+  renderMenu();
+  updateCartBar();
 }
 
 function showOverlay(html){
@@ -871,6 +937,7 @@ async function placeCashOrder(customerName, tipAmount){
 
   const items = {};
   Object.entries(cart).forEach(([id,qty])=> items[id]=qty);
+  if(customLine) items._custom = { label: customLine.label, amount: customLine.amount };
 
   try{
     const insertRes = await fetch(`${config.supaUrl}/rest/v1/orders`, {
@@ -932,6 +999,7 @@ async function placeOrder(customerName, paymentMethod, tipAmount, terminalTip){
 
   const items = {};
   Object.entries(cart).forEach(([id,qty])=> items[id]=qty);
+  if(customLine) items._custom = { label: customLine.label, amount: customLine.amount };
 
   try{
     // 1. Write the order to Supabase
@@ -1097,6 +1165,7 @@ function startPolling(orderId, total, customerName){
 function resetKiosk(){
   clearTimeout(autoResetTimer);
   cart = {};
+  customLine = null;
   currentOrderId = null;
   renderMenu();
   updateCartBar();
