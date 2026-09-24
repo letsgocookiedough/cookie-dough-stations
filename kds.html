@@ -258,6 +258,29 @@
     transition:transform .15s ease;
   }
   .availSwitch.on::after{transform:translateX(20px);}
+
+  /* ---------- phone entry modal ---------- */
+  #phoneModalBackdrop{
+    display:none; position:fixed; inset:0; z-index:90;
+    background:rgba(0,0,0,0.55); align-items:center; justify-content:center;
+  }
+  #phoneModalBackdrop.open{display:flex;}
+  #phoneModal{
+    width:320px; max-width:88vw; background:#241813; border:1px solid var(--line);
+    border-radius:16px; padding:24px 22px;
+  }
+  #phoneModalInput{
+    width:100%; padding:14px 12px; margin-top:4px; border-radius:10px;
+    border:1px solid var(--line); background:rgba(247,241,227,0.06); color:var(--cream);
+    font-size:22px; text-align:center; letter-spacing:.03em;
+  }
+  #phoneModalActions{display:flex; gap:10px; margin-top:18px;}
+  #phoneModalActions button{
+    flex:1; padding:12px; border-radius:10px; border:none; cursor:pointer;
+    font-weight:800; font-size:15px; font-family:'Nunito',sans-serif;
+  }
+  #phoneModalCancel{background:rgba(247,241,227,0.08); color:var(--cream);}
+  #phoneModalSend{background:var(--butter); color:var(--ink);}
 </style>
 </head>
 <body>
@@ -301,6 +324,18 @@
 
   <button onclick="saveConfig()" style="margin-top:18px; width:100%; padding:10px; border-radius:8px; border:none; background:var(--butter); color:var(--ink); font-weight:800; cursor:pointer;">Save</button>
   <div class="savedNote" id="savedNote">Saved ✓</div>
+</div>
+
+<div id="phoneModalBackdrop" onclick="if(event.target===this) closePhoneModal();">
+  <div id="phoneModal">
+    <h3 style="margin:0 0 6px;">Text Receipt</h3>
+    <p style="font-size:13px; opacity:.6; margin:0 0 16px;">Enter the customer's phone number.</p>
+    <input id="phoneModalInput" type="tel" inputmode="numeric" autocomplete="off" placeholder="(555) 555-5555" maxlength="14" onkeydown="if(event.key==='Enter') submitPhoneModal();">
+    <div id="phoneModalActions">
+      <button id="phoneModalCancel" onclick="closePhoneModal()">Cancel</button>
+      <button id="phoneModalSend" onclick="submitPhoneModal()">Send</button>
+    </div>
+  </div>
 </div>
 
 <header>
@@ -980,15 +1015,35 @@ function buildReceiptText(o){
   return lines.join('\n');
 }
 
+let pendingReceipt = null; // { orderId, btnEl } while the phone modal is open
+
 function textReceipt(orderId, btnEl){
   if(!config.textReceiptUrl){ alert('Set the Text Receipt Flow URL in setup first.'); return; }
   const order = allOrders.find(o => o.id === orderId);
   if(!order){ alert('Could not find this order.'); return; }
 
-  const phone = prompt('Phone number for the receipt:');
-  if(!phone) return;
-  const digits = phone.replace(/\D/g, '');
+  pendingReceipt = { orderId, btnEl };
+  document.getElementById('phoneModalInput').value = '';
+  document.getElementById('phoneModalBackdrop').classList.add('open');
+  setTimeout(() => document.getElementById('phoneModalInput').focus(), 100);
+}
+
+function closePhoneModal(){
+  document.getElementById('phoneModalBackdrop').classList.remove('open');
+  pendingReceipt = null;
+}
+
+function submitPhoneModal(){
+  if(!pendingReceipt) return;
+  const { orderId, btnEl } = pendingReceipt;
+  const order = allOrders.find(o => o.id === orderId);
+  if(!order){ closePhoneModal(); alert('Could not find this order.'); return; }
+
+  const raw = document.getElementById('phoneModalInput').value;
+  const digits = raw.replace(/\D/g, '');
   if(digits.length < 10){ alert('That doesn\'t look like a valid phone number.'); return; }
+
+  closePhoneModal();
 
   const message = buildReceiptText(order);
   const originalLabel = btnEl ? btnEl.textContent : '';
