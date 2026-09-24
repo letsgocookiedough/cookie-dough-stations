@@ -170,6 +170,12 @@
     font-size:14px; cursor:pointer;
   }
   .ticket .reopenBtn:active{opacity:1; background:rgba(44,29,25,0.06);}
+  .ticket .textReceiptBtn{
+    margin-top:10px; width:100%; padding:10px; border:1px solid var(--line); border-radius:6px;
+    background:transparent; color:var(--ink); opacity:.65; font-family:'Nunito',sans-serif; font-weight:700;
+    font-size:14px; cursor:pointer;
+  }
+  .ticket .textReceiptBtn:active{opacity:1; background:rgba(44,29,25,0.06);}
 
   #emptyState{
     text-align:center; opacity:.5; padding:40px 20px; font-size:14px;
@@ -283,6 +289,9 @@
   <label>Power Automate — Update Price Flow URL</label>
   <input id="cfgPriceUrl" placeholder="https://prod-xx...invoke?...">
 
+  <label>Power Automate — Text Receipt Flow URL</label>
+  <input id="cfgTextReceiptUrl" placeholder="https://prod-xx...invoke?...">
+
   <label>Truck</label>
   <select id="cfgTruck">
     <option value="all">All</option>
@@ -340,7 +349,8 @@ const DEFAULT_CONFIG = {
   voidUrl: 'https://default43cd3e87970a40f698fb4f545be488.48.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/08/workflows/fccb6fb3b0fe4bd19ce79824455336bc/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=Y9DDan14Fdv3X-aB3m995yx3qnDlft3scNM_-NgOYq8',
   reopenUrl: 'https://default43cd3e87970a40f698fb4f545be488.48.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/05/workflows/69b29f4eecc04729a8b1a9891a290d3d/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=CWCaHQYhpx_Ypwwkey_H9mX7_ufHp_IGIXlxKua9WPM',
   availUrl: 'https://default43cd3e87970a40f698fb4f545be488.48.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/04/workflows/e7b8326d0b5641b7bd1d315e136af7cf/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=olL4sH2gqjkIyfaX0RvKrtJZPSAYXJagWrvU9smVJgQ',
-  priceUrl: 'https://default43cd3e87970a40f698fb4f545be488.48.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/15/workflows/70dcd1026989400592878490663330d9/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=zdltEJIHFkKqLzsVDVu1_Xn-YFMQarTlLf_Y9qa5ZEc'
+  priceUrl: 'https://default43cd3e87970a40f698fb4f545be488.48.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/15/workflows/70dcd1026989400592878490663330d9/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=zdltEJIHFkKqLzsVDVu1_Xn-YFMQarTlLf_Y9qa5ZEc',
+  textReceiptUrl: 'https://default43cd3e87970a40f698fb4f545be488.48.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/10/workflows/b7fd433f791a4714af8538577ff9ec87/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=dEeGkx6-h7Ukl6P7tZvNaZAYYVngvjf38_Et0bultSg'
 };
 
 let config = { ...DEFAULT_CONFIG, truck:'all' };
@@ -440,6 +450,7 @@ function saveConfig(){
   config.reopenUrl = document.getElementById('cfgReopenUrl').value.trim();
   config.availUrl = document.getElementById('cfgAvailUrl').value.trim();
   config.priceUrl = document.getElementById('cfgPriceUrl').value.trim();
+  config.textReceiptUrl = document.getElementById('cfgTextReceiptUrl').value.trim();
   config.truck   = document.getElementById('cfgTruck').value;
   try{ localStorage.setItem('lgcd-kds-config', JSON.stringify(config)); } catch(e){}
   const note = document.getElementById('savedNote');
@@ -472,6 +483,7 @@ function loadConfig(){
   document.getElementById('cfgReopenUrl').value = config.reopenUrl || '';
   document.getElementById('cfgAvailUrl').value = config.availUrl || '';
   document.getElementById('cfgPriceUrl').value = config.priceUrl || '';
+  document.getElementById('cfgTextReceiptUrl').value = config.textReceiptUrl || '';
   document.getElementById('cfgTruck').value = config.truck || 'all';
 
   if(urlTruck === 'van' || urlTruck === 'trailer'){
@@ -642,6 +654,7 @@ function render(){
           <div class="doneTime">completed ${o.completed_at ? elapsedLabel(o.completed_at) : ''}</div>
           ${config.viewOnly ? '' : `<button class="reopenBtn" onclick="reopenOrder('${o.id}', this)">↩ Move to Open</button>`}
         `}
+        ${config.viewOnly ? '' : `<button class="textReceiptBtn" onclick="textReceipt('${o.id}', this)">🧾 Text Receipt</button>`}
       </div>
     `;
   }).join('');
@@ -941,6 +954,69 @@ function sendInBackground(url, orderId, label, attempt = 1){
       setTimeout(() => sendInBackground(url, orderId, label, attempt + 1), attempt * 1500);
     } else {
       console.warn(`${label} for order ${orderId} failed after ${maxAttempts} attempts on a shaky connection — it'll reappear on the rail on the next refresh if it truly didn't go through.`);
+    }
+  });
+}
+
+function buildReceiptText(o){
+  const lines = [`Let's Go Cookie Dough — Receipt`, `(${(o.truck||'').toUpperCase()})`, ''];
+  Object.entries(o.items || {}).forEach(([id, qty]) => {
+    if(id === '_custom'){
+      const amt = Number(qty?.amount) || 0;
+      lines.push(`${qty?.label || 'Custom'}: ${amt < 0 ? '-' : ''}$${Math.abs(amt).toFixed(2)}`);
+    } else {
+      lines.push(`${qty}x ${MENU_NAMES[id] || id}`);
+    }
+  });
+  lines.push('');
+  if(o.subtotal_amount != null) lines.push(`Subtotal: $${Number(o.subtotal_amount).toFixed(2)}`);
+  if(o.tax_amount != null) lines.push(`Tax: $${Number(o.tax_amount).toFixed(2)}`);
+  if(Number(o.tip_amount) > 0) lines.push(`Tip: $${Number(o.tip_amount).toFixed(2)}`);
+  lines.push(`Total: $${Number(o.total_amount).toFixed(2)}`);
+  lines.push(`Paid: ${o.payment_method === 'cash' ? 'Cash' : 'Card'}`);
+  lines.push(new Date(o.created_at).toLocaleString());
+  lines.push('');
+  lines.push('Thank you!');
+  return lines.join('\n');
+}
+
+function textReceipt(orderId, btnEl){
+  if(!config.textReceiptUrl){ alert('Set the Text Receipt Flow URL in setup first.'); return; }
+  const order = allOrders.find(o => o.id === orderId);
+  if(!order){ alert('Could not find this order.'); return; }
+
+  const phone = prompt('Phone number for the receipt:');
+  if(!phone) return;
+  const digits = phone.replace(/\D/g, '');
+  if(digits.length < 10){ alert('That doesn\'t look like a valid phone number.'); return; }
+
+  const message = buildReceiptText(order);
+  const originalLabel = btnEl ? btnEl.textContent : '';
+  if(btnEl){ btnEl.disabled = true; btnEl.textContent = 'Sending...'; }
+
+  sendReceiptInBackground(config.textReceiptUrl, digits, message, () => {
+    if(btnEl){ btnEl.disabled = false; btnEl.textContent = originalLabel; }
+  }, () => {
+    if(btnEl){ btnEl.disabled = false; btnEl.textContent = originalLabel; }
+    alert('Could not send the receipt — check the connection and try again.');
+  });
+}
+
+function sendReceiptInBackground(url, phone, message, onSuccess, onFinalFailure, attempt = 1){
+  const maxAttempts = 4;
+  fetch(url, {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ phone, message })
+  }).then(res => {
+    if(!res.ok) throw new Error('HTTP ' + res.status);
+    if(onSuccess) onSuccess();
+  }).catch(() => {
+    if(attempt < maxAttempts){
+      setTimeout(() => sendReceiptInBackground(url, phone, message, onSuccess, onFinalFailure, attempt + 1), attempt * 1500);
+    } else {
+      console.warn(`Text receipt to ${phone} failed after ${maxAttempts} attempts.`);
+      if(onFinalFailure) onFinalFailure();
     }
   });
 }
