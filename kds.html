@@ -142,6 +142,13 @@
     font-size:13px; line-height:1; cursor:pointer;
   }
   .ticket .voidBtn:active{background:rgba(193,68,46,0.2); color:var(--jam);}
+  .ticket .textReceiptIconBtn{
+    position:absolute; top:10px; left:10px; z-index:3;
+    width:26px; height:26px; border-radius:50%; border:1px solid rgba(44,29,25,0.2);
+    background:rgba(44,29,25,0.06); color:rgba(44,29,25,0.55);
+    font-size:13px; line-height:1; cursor:pointer;
+  }
+  .ticket .textReceiptIconBtn:active{background:rgba(217,153,61,0.25); color:var(--ink);}
   .ticket .watchLabel{
     margin-top:14px; width:100%; padding:14px; border-radius:6px;
     background:rgba(44,29,25,0.06); color:var(--ink); font-family:'Nunito',sans-serif; font-weight:700;
@@ -170,12 +177,6 @@
     font-size:14px; cursor:pointer;
   }
   .ticket .reopenBtn:active{opacity:1; background:rgba(44,29,25,0.06);}
-  .ticket .textReceiptBtn{
-    margin-top:10px; width:100%; padding:10px; border:1px solid var(--line); border-radius:6px;
-    background:transparent; color:var(--ink); opacity:.65; font-family:'Nunito',sans-serif; font-weight:700;
-    font-size:14px; cursor:pointer;
-  }
-  .ticket .textReceiptBtn:active{opacity:1; background:rgba(44,29,25,0.06);}
 
   #emptyState{
     text-align:center; opacity:.5; padding:40px 20px; font-size:14px;
@@ -671,6 +672,7 @@ function render(){
       <div class="ticket ${ageClass}">
         <div class="jagged"></div>
         <button class="voidBtn" onclick="voidOrder('${o.id}', this)" title="Void this order">✕</button>
+        ${config.viewOnly ? '' : `<button class="textReceiptIconBtn" onclick="textReceipt('${o.id}', this)" title="Text Receipt">🧾</button>`}
         ${pendingSync[o.id] ? `<div class="resyncBadge">↻ Syncing — already actioned, catching up</div>` : ''}
         ${isOpen && isCash ? `<div class="cashFlag">💵 CASH DUE<br>$${Number(o.total_amount).toFixed(2)}</div>` : ''}
         <div class="ttop">
@@ -689,7 +691,6 @@ function render(){
           <div class="doneTime">completed ${o.completed_at ? elapsedLabel(o.completed_at) : ''}</div>
           ${config.viewOnly ? '' : `<button class="reopenBtn" onclick="reopenOrder('${o.id}', this)">↩ Move to Open</button>`}
         `}
-        ${config.viewOnly ? '' : `<button class="textReceiptBtn" onclick="textReceipt('${o.id}', this)">🧾 Text Receipt</button>`}
       </div>
     `;
   }).join('');
@@ -1047,7 +1048,7 @@ function submitPhoneModal(){
 
   const message = buildReceiptText(order);
   const originalLabel = btnEl ? btnEl.textContent : '';
-  if(btnEl){ btnEl.disabled = true; btnEl.textContent = 'Sending...'; }
+  if(btnEl){ btnEl.disabled = true; btnEl.textContent = '⏳'; }
 
   sendReceiptInBackground(config.textReceiptUrl, digits, message, () => {
     if(btnEl){ btnEl.disabled = false; btnEl.textContent = originalLabel; }
